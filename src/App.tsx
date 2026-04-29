@@ -20,10 +20,16 @@ import {
   Moon,
   Sun,
   Camera,
-  FolderOpen
+  FolderOpen,
+  CloudUpload,
+  CheckCircle2,
+  AlertCircle,
+  LogIn
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ResumeData, Experience, Education, SkillGroup } from './types';
+import { supabase } from './supabaseClient';
+import Auth from './Auth';
 
 const INITIAL_DATA: ResumeData = {
   personalInfo: {
@@ -72,7 +78,45 @@ export default function App() {
   const [activeStep, setActiveStep] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [session, setSession] = useState<any>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoadingSession(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const saveToCloud = async () => {
+    if (!session?.user) return;
+    setSaveStatus('saving');
+    try {
+      const { error } = await supabase
+        .from('resumes')
+        .upsert({ 
+          id: session.user.id, // Use actual user ID
+          content: resumeData,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (error) {
+      console.error('Error saving resume:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  };
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
@@ -188,6 +232,22 @@ export default function App() {
     { icon: FileText, label: 'Summary', step: 5 },
   ];
 
+  if (isLoadingSession) {
+    return (
+      <div className="min-h-screen bg-brand-surface flex items-center justify-center">
+        <motion.div 
+          animate={{ rotate: 360 }} 
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-10 h-10 border-4 border-brand-accent border-t-transparent rounded-full"
+        />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
   return (
     <div className={`flex flex-col min-h-screen transition-colors duration-300 ${isDarkMode ? 'dark bg-slate-900 text-white' : 'bg-brand-surface'} selection:bg-brand-accent/30`}>
       {/* Header */}
@@ -196,6 +256,32 @@ export default function App() {
           <span className={`text-xl font-black tracking-tight font-serif ${isDarkMode ? 'text-white' : 'text-blue-950'}`}>Resume Maker</span>
         </div>
         <div className="flex items-center gap-4">
+          <button 
+            onClick={saveToCloud}
+            disabled={saveStatus === 'saving'}
+            className={`flex items-center gap-2 px-4 py-2 font-bold rounded-lg transition-all active:scale-95 duration-150 text-sm ${
+              saveStatus === 'success' 
+                ? 'bg-green-500 text-white' 
+                : saveStatus === 'error'
+                ? 'bg-red-500 text-white'
+                : isDarkMode 
+                ? 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700' 
+                : 'bg-white border border-brand-primary text-brand-primary hover:bg-slate-50'
+            }`}
+          >
+            {saveStatus === 'saving' ? (
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                <CloudUpload size={18} />
+              </motion.div>
+            ) : saveStatus === 'success' ? (
+              <CheckCircle2 size={18} />
+            ) : saveStatus === 'error' ? (
+              <AlertCircle size={18} />
+            ) : (
+              <CloudUpload size={18} />
+            )}
+            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved!' : saveStatus === 'error' ? 'Error' : 'Save to Cloud'}
+          </button>
           <button className={`px-4 py-2 border font-bold rounded-lg transition-colors active:scale-95 duration-150 text-sm ${isDarkMode ? 'border-slate-700 hover:bg-slate-800' : 'border-brand-primary text-brand-primary hover:bg-slate-50'}`}>
             Save Draft
           </button>
@@ -227,6 +313,13 @@ export default function App() {
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
                     <FolderOpen size={16} />
                     Saved Drafts
+                  </button>
+                  <button 
+                    onClick={() => supabase.auth.signOut()}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-red-500 ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
+                  >
+                    <LogIn size={16} className="rotate-180" />
+                    Sign Out
                   </button>
                 </motion.div>
               )}
