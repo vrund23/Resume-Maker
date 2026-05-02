@@ -4,6 +4,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { 
   User, 
   GraduationCap, 
@@ -24,7 +26,11 @@ import {
   CloudUpload,
   CheckCircle2,
   AlertCircle,
-  LogIn
+  LogIn,
+  X,
+  Type,
+  Layout,
+  Palette
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ResumeData, Experience, Education, SkillGroup } from './types';
@@ -78,44 +84,108 @@ export default function App() {
   const [activeStep, setActiveStep] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
+  const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
+  const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<'tech-stack' | 'modern-sidebar' | 'classic-executive' | 'bold-impact'>('classic-executive');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [session, setSession] = useState<any>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const resumeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setIsLoadingSession(false);
+      if (session) fetchDrafts(session.user.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) fetchDrafts(session.user.id);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const saveToCloud = async () => {
+  const fetchDrafts = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('resumes')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
+
+    if (!error && data) {
+      setDrafts(data);
+    }
+  };
+
+  const saveDraft = async () => {
     if (!session?.user) return;
     setSaveStatus('saving');
     try {
+      const id = currentDraftId || crypto.randomUUID();
       const { error } = await supabase
         .from('resumes')
         .upsert({ 
-          id: session.user.id, // Use actual user ID
-          content: resumeData,
+          id: id,
+          user_id: session.user.id,
+          content: { ...resumeData, template: selectedTemplate },
           updated_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error saving:', error);
+        throw error;
+      }
+      
+      setCurrentDraftId(id);
       setSaveStatus('success');
+      fetchDrafts(session.user.id);
       setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch (error) {
-      console.error('Error saving resume:', error);
+    } catch (error: any) {
+      console.error('Catch error saving resume:', error);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      // Show error message for a longer period if it's an error
+      setTimeout(() => setSaveStatus('idle'), 5000);
     }
+  };
+
+  const loadDraft = (draft: any) => {
+    setResumeData(draft.content);
+    setSelectedTemplate(draft.content.template || 'professional');
+    setCurrentDraftId(draft.id);
+    setIsDraftsModalOpen(false);
+    setIsSettingsOpen(false);
+  };
+
+  const handleExportPDF = async () => {
+    if (!resumeRef.current) return;
+    
+    // Hide controls during capture if necessary, but here we just capture the ref
+    const canvas = await html2canvas(resumeRef.current, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`resume_${resumeData.personalInfo.fullName.replace(/\s+/g, '_').toLowerCase()}.pdf`);
   };
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
@@ -256,36 +326,11 @@ export default function App() {
           <span className={`text-xl font-black tracking-tight font-serif ${isDarkMode ? 'text-white' : 'text-blue-950'}`}>Resume Maker</span>
         </div>
         <div className="flex items-center gap-4">
+
           <button 
-            onClick={saveToCloud}
-            disabled={saveStatus === 'saving'}
-            className={`flex items-center gap-2 px-4 py-2 font-bold rounded-lg transition-all active:scale-95 duration-150 text-sm ${
-              saveStatus === 'success' 
-                ? 'bg-green-500 text-white' 
-                : saveStatus === 'error'
-                ? 'bg-red-500 text-white'
-                : isDarkMode 
-                ? 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700' 
-                : 'bg-white border border-brand-primary text-brand-primary hover:bg-slate-50'
-            }`}
+            onClick={handleExportPDF}
+            className="px-4 py-2 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/90 transition-colors active:scale-95 duration-150 text-sm"
           >
-            {saveStatus === 'saving' ? (
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                <CloudUpload size={18} />
-              </motion.div>
-            ) : saveStatus === 'success' ? (
-              <CheckCircle2 size={18} />
-            ) : saveStatus === 'error' ? (
-              <AlertCircle size={18} />
-            ) : (
-              <CloudUpload size={18} />
-            )}
-            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved!' : saveStatus === 'error' ? 'Error' : 'Save to Cloud'}
-          </button>
-          <button className={`px-4 py-2 border font-bold rounded-lg transition-colors active:scale-95 duration-150 text-sm ${isDarkMode ? 'border-slate-700 hover:bg-slate-800' : 'border-brand-primary text-brand-primary hover:bg-slate-50'}`}>
-            Save Draft
-          </button>
-          <button className="px-4 py-2 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/90 transition-colors active:scale-95 duration-150 text-sm">
             Export PDF
           </button>
           <div className="flex gap-2 ml-4 border-l pl-4 border-brand-outline-variant relative">
@@ -310,9 +355,12 @@ export default function App() {
                     {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                     {isDarkMode ? 'Light Mode' : 'Dark Mode'}
                   </button>
-                  <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
+                  <button 
+                    onClick={() => setIsDraftsModalOpen(true)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
+                  >
                     <FolderOpen size={16} />
-                    Saved Drafts
+                    View Drafts
                   </button>
                   <button 
                     onClick={() => supabase.auth.signOut()}
@@ -560,147 +608,317 @@ export default function App() {
           </section>
 
           {/* Live Canvas (Preview) */}
-          <section className="canvas-bg flex justify-center items-start overflow-y-auto p-12 custom-scrollbar">
+          <section className="canvas-bg flex justify-center items-start overflow-y-auto p-12 custom-scrollbar relative">
             <motion.div 
               layout
-              className="bg-white w-[595px] min-h-[842px] p-12 shadow-2xl relative mb-12 flex flex-col font-sans"
+              ref={resumeRef}
+              className={`bg-white w-[595px] min-h-[842px] shadow-2xl relative mb-12 flex font-sans overflow-hidden ${
+                selectedTemplate === 'modern-sidebar' ? 'flex-row' : 
+                selectedTemplate === 'tech-stack' ? 'font-mono p-12 flex-col' : 
+                selectedTemplate === 'classic-executive' ? 'p-16 flex-col' :
+                'p-12 flex-col'
+              }`}
             >
-              {/* Resume Header */}
-              <header className="mb-10 text-center">
-                <h2 className="text-4xl font-serif font-black text-brand-primary tracking-tight mb-3">
-                  {resumeData.personalInfo.fullName || "Your Name"}
-                </h2>
-                <div className="flex flex-wrap justify-center items-center gap-3 text-[9px] font-bold text-brand-secondary uppercase tracking-[0.1em]">
-                  <span className="text-brand-primary">{resumeData.personalInfo.jobTitle}</span>
-                  <span className="w-1 h-1 bg-brand-secondary rounded-full opacity-30"></span>
-                  <span>{resumeData.personalInfo.email}</span>
-                  {resumeData.personalInfo.phone && (
-                    <>
-                      <span className="w-1 h-1 bg-brand-secondary rounded-full opacity-30"></span>
-                      <span>{resumeData.personalInfo.phone}</span>
-                    </>
-                  )}
-                  {resumeData.personalInfo.linkedin && (
-                    <>
-                      <span className="w-1 h-1 bg-brand-secondary rounded-full opacity-30"></span>
-                      <span>{resumeData.personalInfo.linkedin}</span>
-                    </>
-                  )}
-                  <span className="w-1 h-1 bg-brand-secondary rounded-full opacity-30"></span>
-                  <span>{resumeData.personalInfo.location}</span>
-                </div>
-              </header>
-
-              {/* Resume Sections */}
-              <div className="space-y-10">
-                {/* Summary Section */}
-                {resumeData.summary && (
-                  <section>
-                    <div className="flex items-center gap-4 mb-4">
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Professional Summary</h3>
-                      <div className="h-[1px] flex-1 bg-slate-100"></div>
+              {selectedTemplate === 'modern-sidebar' ? (
+                /* Modern Sidebar: 30/70 asymmetric layout */
+                <>
+                  <div className="w-[180px] bg-slate-50 p-8 flex flex-col gap-8 h-full border-r border-slate-100">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900 mb-1 leading-tight">{resumeData.personalInfo.fullName}</h2>
+                      <p className="text-[9px] font-black text-brand-primary uppercase tracking-wider">{resumeData.personalInfo.jobTitle}</p>
                     </div>
-                    <p className="text-[13px] text-slate-600 leading-relaxed italic font-medium">{resumeData.summary}</p>
-                  </section>
-                )}
-
-                {/* Experience Section */}
-                <section>
-                  <div className="flex items-center gap-4 mb-6">
-                    <h3 className="text-base font-serif font-bold text-brand-primary whitespace-nowrap">Work Experience</h3>
-                    <div className="h-[1px] flex-1 bg-slate-200"></div>
-                  </div>
-                  
-                  <div className="space-y-8">
-                    {resumeData.experiences.length > 0 ? resumeData.experiences.map((exp, idx) => (
-                      <div key={exp.id} className={idx === 1 ? 'opacity-50 blur-[0.5px]' : ''}>
-                        <div className="flex justify-between items-baseline mb-1">
-                          <h4 className="text-base font-bold text-brand-primary">{exp.jobTitle || "Job Title"}</h4>
-                          <span className="text-[10px] text-slate-500 italic font-medium">{exp.startDate} — {exp.endDate}</span>
-                        </div>
-                        <p className="text-[11px] text-brand-secondary font-bold mb-2">{exp.employer}{exp.city ? `, ${exp.city}` : ''}</p>
-                        <div className="text-[11px] text-slate-600 leading-relaxed font-medium">
-                          {exp.description && (
-                            <ul className="list-disc ml-5 space-y-1">
-                              {exp.description.split('\n').map((line, i) => (
-                                <li key={i}>{line}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
+                    <div className="space-y-3">
+                      <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact</h4>
+                      <div className="space-y-2 text-[9px] text-slate-600 font-medium">
+                        <p className="break-all">{resumeData.personalInfo.email}</p>
+                        <p>{resumeData.personalInfo.phone}</p>
+                        <p>{resumeData.personalInfo.location}</p>
                       </div>
-                    )) : <p className="text-[11px] text-slate-400 italic">No experience added yet...</p>}
-                  </div>
-                </section>
-
-                {/* Education Section */}
-                {resumeData.education.length > 0 && (
-                  <section>
-                    <div className="flex items-center gap-4 mb-6">
-                      <h3 className="text-base font-serif font-bold text-brand-primary whitespace-nowrap">Education</h3>
-                      <div className="h-[1px] flex-1 bg-slate-200"></div>
                     </div>
-                    <div className="space-y-4">
-                      {resumeData.education.map(edu => (
-                        <div key={edu.id} className="flex justify-between">
-                          <div>
-                            <h4 className="text-sm font-bold text-brand-primary">{edu.degree || "Degree"}</h4>
-                            <p className="text-[10px] text-brand-secondary font-semibold">{edu.school} {edu.city ? ` | ${edu.city}` : ''}</p>
+                  </div>
+                  <div className="flex-1 p-10 space-y-8">
+                    {/* Experiences for Modern Sidebar */}
+                    <section>
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Experience</h3>
+                      <div className="space-y-6">
+                        {resumeData.experiences.map(exp => (
+                          <div key={exp.id}>
+                            <h4 className="text-[11px] font-bold text-slate-900">{exp.jobTitle}</h4>
+                            <p className="text-[9px] text-brand-secondary font-bold mb-2">{exp.employer}</p>
+                            <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-3">{exp.description}</p>
                           </div>
-                          <span className="text-[10px] text-slate-500 italic font-medium">{edu.startDate} — {edu.endDate}</span>
-                        </div>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                </>
+              ) : selectedTemplate === 'tech-stack' ? (
+                /* Tech-Stack Specialist: Single-column, focus on badges */
+                <>
+                  <header className="mb-10">
+                    <h2 className="text-3xl font-black text-brand-primary mb-2">{resumeData.personalInfo.fullName}</h2>
+                    <div className="flex flex-wrap gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
+                      <span>{resumeData.personalInfo.jobTitle}</span>
+                      <span>{resumeData.personalInfo.email}</span>
+                    </div>
+                  </header>
+                  <section className="mb-10">
+                    <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Stack</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {resumeData.skills.flatMap(s => s.items.split(',')).map(skill => (
+                        <span key={skill} className="px-3 py-1 bg-slate-100 rounded-md text-[10px] font-bold text-slate-700">{skill.trim()}</span>
                       ))}
                     </div>
                   </section>
-                )}
-
-                {/* Skills Section */}
-                <section>
-                  <div className="flex items-center gap-4 mb-6">
-                    <h3 className="text-base font-serif font-bold text-brand-primary whitespace-nowrap">Technical Expertise</h3>
-                    <div className="h-[1px] flex-1 bg-slate-200"></div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    {resumeData.skills.length > 0 ? resumeData.skills.map(skillGroup => (
-                      <div key={skillGroup.id} className="p-4 bg-brand-surface-low border border-slate-100 rounded">
-                        <h5 className="text-[9px] font-black text-brand-primary mb-2 uppercase tracking-wider">{skillGroup.category || "Category"}</h5>
-                        <div className="flex flex-wrap gap-1.5">
-                          {skillGroup.items.split(',').filter(item => item.trim()).map(item => (
-                            <span key={item} className="px-1.5 py-0.5 bg-white border border-slate-200 text-slate-500 text-[8px] font-bold rounded uppercase">{item.trim()}</span>
-                          ))}
-                          {skillGroup.highlightedItems && (
-                            <span className="px-1.5 py-0.5 bg-brand-secondary text-white text-[8px] font-bold rounded uppercase shadow-sm">{skillGroup.highlightedItems}</span>
-                          )}
-                        </div>
+                  {/* Experience */}
+                  <section className="space-y-8">
+                    {resumeData.experiences.map(exp => (
+                      <div key={exp.id} className="border-l-2 border-slate-100 pl-6">
+                        <h4 className="text-sm font-black text-slate-900">{exp.jobTitle} @ {exp.employer}</h4>
+                        <p className="text-[10px] text-slate-400 mb-3">{exp.startDate} - {exp.endDate}</p>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">{exp.description}</p>
                       </div>
-                    )) : <p className="text-[11px] text-slate-400 italic col-span-2">No skills added yet...</p>}
+                    ))}
+                  </section>
+                </>
+              ) : selectedTemplate === 'classic-executive' ? (
+                /* Classic Executive: Centered single-column, serif */
+                <>
+                  <header className="text-center mb-10 border-b-2 border-slate-900 pb-6">
+                    <h2 className="text-4xl font-serif font-bold text-slate-900 mb-2">{resumeData.personalInfo.fullName}</h2>
+                    <div className="flex justify-center gap-4 text-xs font-medium text-slate-600">
+                      <span>{resumeData.personalInfo.jobTitle}</span>
+                      <span>•</span>
+                      <span>{resumeData.personalInfo.email}</span>
+                      <span>•</span>
+                      <span>{resumeData.personalInfo.phone}</span>
+                    </div>
+                  </header>
+                  <div className="space-y-10">
+                    <section>
+                      <h3 className="text-center text-sm font-serif font-bold italic text-slate-900 mb-4 uppercase tracking-[0.2em] border-b border-slate-200 pb-1">Professional Experience</h3>
+                      <div className="space-y-8">
+                        {resumeData.experiences.map(exp => (
+                          <div key={exp.id}>
+                            <div className="flex justify-between items-baseline mb-1">
+                              <h4 className="text-sm font-bold text-slate-900">{exp.jobTitle}</h4>
+                              <span className="text-[10px] font-bold text-slate-500">{exp.startDate} — {exp.endDate}</span>
+                            </div>
+                            <p className="text-xs font-serif italic text-slate-600 mb-3">{exp.employer}, {exp.city}</p>
+                            <p className="text-[11px] text-slate-700 leading-relaxed font-serif">{exp.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
                   </div>
-                </section>
-              </div>
-
-              {/* Signature/Footer Decorative */}
-              <div className="mt-auto pt-12 flex justify-center">
-                <img 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiZRUrUx9Gp3rIxivGZUkCH3oGjBRXqyJCPgCjUHvPI_ZKbocpbKInnweoDL2T0yQ2BrQfg0BvPx79MpwA_-qxWPQQ34iNnFqPoUIn9ivAUECgmAf1uwfvBf3UPMco_0qB-uq1YUyFczztOOC9QumYHXSDPYX3w6zV37Qs5AHkvkgR9C24PrdcgH8JsX_mRKa81McroSmECQ0aI0MsmUg-KQDXV3TYumtJlj_c7Mst9DTD5CeP8aeuBkqSOtmwnwk3P_o6H3T_9X0" 
-                  alt="Signature" 
-                  className="w-24 opacity-10 grayscale"
-                />
-              </div>
+                </>
+              ) : (
+                /* Bold Impact: Timeline borders */
+                <>
+                  <header className="mb-12 bg-slate-900 text-white -mx-12 -mt-12 p-12">
+                    <h2 className="text-4xl font-black mb-2">{resumeData.personalInfo.fullName}</h2>
+                    <p className="text-sm font-bold text-brand-accent uppercase tracking-[0.2em]">{resumeData.personalInfo.jobTitle}</p>
+                  </header>
+                  <div className="space-y-12 mt-12">
+                    <section className="relative">
+                      <h3 className="text-lg font-black text-slate-900 mb-8 border-l-4 border-brand-secondary pl-4">Career Journey</h3>
+                      <div className="space-y-12">
+                        {resumeData.experiences.map((exp, idx) => (
+                          <div key={exp.id} className="relative pl-8 before:content-[''] before:absolute before:left-0 before:top-2 before:w-1 before:h-[calc(100%+30px)] before:bg-slate-100 last:before:h-0">
+                            <div className="absolute left-[-5px] top-1 w-3 h-3 rounded-full bg-brand-secondary shadow-[0_0_0_4px_white]" />
+                            <h4 className="text-sm font-black text-slate-900">{exp.jobTitle}</h4>
+                            <p className="text-[10px] font-black text-brand-secondary mb-3">{exp.employer} | {exp.startDate} - {exp.endDate}</p>
+                            <p className="text-[11px] text-slate-600 leading-relaxed opacity-80">{exp.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                </>
+              )}
             </motion.div>
 
             {/* Preview FAB Controls */}
-            <div className="fixed bottom-10 right-10 flex flex-col gap-4">
-              <button className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-brand-primary hover:text-brand-secondary transition-all active:scale-90 border border-slate-100">
-                <Paintbrush size={24} />
-              </button>
-              <button className="w-14 h-14 bg-brand-secondary text-white shadow-xl rounded-full flex items-center justify-center hover:bg-brand-secondary/90 transition-all active:scale-90">
-                <Maximize2 size={24} />
-              </button>
+            <div className="fixed bottom-10 right-10 flex flex-col items-end gap-4 z-[80]">
+              {/* Template Gallery */}
+              <AnimatePresence>
+                {isTemplateGalleryOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className={`shadow-2xl rounded-2xl p-4 border w-48 mb-2 ${
+                      isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-brand-outline-variant'
+                    }`}
+                  >
+                    <h4 className={`text-xs font-bold mb-3 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-brand-primary'}`}>
+                      <Palette size={14} className="text-brand-secondary" />
+                      Select Layout
+                    </h4>
+                    <div className="space-y-2">
+                      {(['tech-stack', 'modern-sidebar', 'classic-executive', 'bold-impact'] as const).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => {
+                            setSelectedTemplate(t);
+                            setIsTemplateGalleryOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                            selectedTemplate === t 
+                              ? 'bg-brand-primary text-white shadow-md' 
+                              : isDarkMode 
+                                ? 'hover:bg-slate-700 text-slate-300' 
+                                : 'hover:bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {t.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={() => setIsTemplateGalleryOpen(!isTemplateGalleryOpen)}
+                  className={`w-14 h-14 shadow-xl rounded-full flex items-center justify-center transition-all active:scale-90 border mb-0 ${
+                    isDarkMode 
+                      ? 'bg-slate-800 border-slate-700 text-white' 
+                      : 'bg-white border-slate-100 text-brand-primary'
+                  } ${isTemplateGalleryOpen ? 'ring-2 ring-brand-accent' : ''}`}
+                >
+                  <Paintbrush size={24} />
+                </button>
+                <button 
+                  onClick={() => setIsFullScreenPreview(true)}
+                  className="w-14 h-14 bg-brand-secondary text-white shadow-xl rounded-full flex items-center justify-center hover:bg-brand-secondary/90 transition-all active:scale-90"
+                >
+                  <Maximize2 size={24} />
+                </button>
+              </div>
             </div>
           </section>
         </main>
       </div>
+
+      {/* Full Screen Preview Modal */}
+      <AnimatePresence>
+        {isFullScreenPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-12 custom-scrollbar"
+          >
+            <div className="relative">
+              <button 
+                onClick={() => setIsFullScreenPreview(false)}
+                className="fixed top-8 right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+              <div 
+                className={`bg-white w-[794px] min-h-[1123px] p-20 shadow-2xl relative mb-12 flex flex-col font-sans origin-top scale-[1.1] ${
+                  selectedTemplate === 'modern-sidebar' ? 'flex-row' : 
+                  selectedTemplate === 'tech-stack' ? 'font-mono' : ''
+                }`}
+              >
+                {selectedTemplate === 'modern-sidebar' ? (
+                  <>
+                    <div className="w-1/3 bg-slate-50 p-8 h-full rounded-l-3xl">
+                      {/* Sidebar Content */}
+                      <div className="mb-10">
+                        <h2 className="text-3xl font-black text-brand-primary mb-2">{resumeData.personalInfo.fullName}</h2>
+                        <p className="text-sm font-bold text-brand-secondary uppercase">{resumeData.personalInfo.jobTitle}</p>
+                      </div>
+                      <div className="space-y-4 text-xs text-slate-500">
+                        <p>{resumeData.personalInfo.email}</p>
+                        <p>{resumeData.personalInfo.phone}</p>
+                        <p>{resumeData.personalInfo.location}</p>
+                      </div>
+                    </div>
+                    <div className="flex-1 p-10">
+                      {/* Main Content */}
+                      <section className="mb-10">
+                        <h3 className="text-xl font-bold border-b-2 border-brand-primary mb-4 pb-1">Experience</h3>
+                        {/* Repeat items... */}
+                      </section>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Standard centralized or full width layouts */}
+                    <header className={`mb-12 ${selectedTemplate === 'classic-executive' ? 'text-center' : 'text-left'}`}>
+                      <h2 className={`font-black tracking-tight mb-4 ${selectedTemplate === 'classic-executive' ? 'font-serif text-5xl border-b-2 border-slate-900 pb-2' : 'text-5xl'}`}>
+                        {resumeData.personalInfo.fullName || "Your Name"}
+                      </h2>
+                      {/* Subheader info... */}
+                    </header>
+                    {/* ... rest of full screen view ... */}
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Drafts Modal */}
+      <AnimatePresence>
+        {isDraftsModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className={`w-full max-w-lg rounded-2xl shadow-2xl p-6 relative overflow-hidden ${isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white border'}`}
+            >
+              <button 
+                onClick={() => setIsDraftsModalOpen(false)}
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+              <h2 className={`text-xl font-serif font-bold mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-brand-primary'}`}>
+                <FolderOpen className="text-brand-secondary" />
+                Select a Saved Draft
+              </h2>
+              
+              <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                {drafts.length > 0 ? drafts.map((draft) => (
+                  <button
+                    key={draft.id}
+                    onClick={() => loadDraft(draft)}
+                    className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all group ${
+                      isDarkMode 
+                        ? 'border-slate-700 hover:bg-slate-700 text-white' 
+                        : 'border-slate-100 hover:border-brand-accent hover:bg-slate-50 text-brand-primary'
+                    }`}
+                  >
+                    <div className="flex flex-col items-start">
+                      <span className="font-bold text-sm">{draft.content?.personalInfo?.fullName || 'Untitled Resume'}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{new Date(draft.updated_at).toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-brand-secondary/10 text-brand-secondary rounded-full text-[10px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+                      Load Draft
+                    </div>
+                  </button>
+                )) : (
+                  <div className="py-12 text-center">
+                    <p className="text-slate-400 text-sm font-medium italic">No saved drafts found.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{ __html: `
         .custom-scrollbar::-webkit-scrollbar {
