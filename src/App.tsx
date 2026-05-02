@@ -79,6 +79,376 @@ const INITIAL_DATA: ResumeData = {
   ]
 };
 
+const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; template: string; }>(
+  ({ data, template }, ref) => {
+    return (
+      <div 
+        ref={ref}
+        className={`bg-white shadow-2xl relative flex font-sans overflow-hidden transition-all duration-500 ${
+          template === 'modern-sidebar' ? 'flex-row' : 
+          template === 'tech-stack' ? 'font-mono p-12 flex-col' : 
+          template === 'classic-executive' ? 'p-16 flex-col' :
+          'p-12 flex-col'
+        }`}
+        style={{ width: '595px', minHeight: '842px' }}
+      >
+        {template === 'modern-sidebar' ? (
+          /* Modern Sidebar: 30/70 asymmetric layout */
+          <>
+            <div className="w-[200px] bg-slate-50 p-8 flex flex-col gap-8 h-full border-r border-slate-100 flex-shrink-0">
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                  {data.personalInfo.fullName || "[Your Name]"}
+                </h2>
+                <p className="text-[10px] font-black text-brand-primary uppercase tracking-wider">
+                  {data.personalInfo.jobTitle || "[Job Title]"}
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact</h4>
+                  <div className="space-y-2 text-[10px] text-slate-600 font-medium">
+                    <p className="break-all">
+                      <a href={`mailto:${data.personalInfo.email}`} className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline">
+                        {data.personalInfo.email || "[Email]"}
+                      </a>
+                    </p>
+                    <p>{data.personalInfo.phone || "[Phone]"}</p>
+                    {data.personalInfo.linkedin && (
+                      <p className="break-all">
+                        <a 
+                          href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline"
+                        >
+                          {data.personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}
+                        </a>
+                      </p>
+                    )}
+                    <p>{data.personalInfo.location || "[Location]"}</p>
+                  </div>
+                </div>
+
+                {data.skills.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Expertise</h4>
+                    <div className="space-y-4">
+                      {data.skills.map(group => (
+                        <div key={group.id}>
+                          <p className="text-[10px] font-black text-slate-900 uppercase mb-1">{group.category || "[Category]"}</p>
+                          <p className="text-[10px] text-slate-700 leading-tight">{group.items || "[Skills]"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex-1 p-10 flex flex-col h-full overflow-hidden">
+              <div className="space-y-8">
+                {/* Summary */}
+                <section>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Profile</h3>
+                  <p className="text-[11px] text-slate-600 leading-relaxed italic">
+                    {data.summary || "[Professional profile summary goes here...]"}
+                  </p>
+                </section>
+
+                {/* Experience */}
+                <section>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Experience</h3>
+                  <div className="space-y-6">
+                    {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]' }]).map(exp => (
+                      <div key={exp.id}>
+                        <div className="flex justify-between items-baseline mb-1">
+                          <h4 className="text-[11px] font-bold text-slate-900">{exp.jobTitle}</h4>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase">{exp.startDate} — {exp.endDate}</span>
+                        </div>
+                        <p className="text-[10px] text-brand-secondary font-bold mb-2">{exp.employer}</p>
+                        <p className="text-[10px] text-slate-500 leading-relaxed px-4 border-l border-slate-100">{exp.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Education */}
+                <section>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Education</h3>
+                  <div className="space-y-4">
+                    {(data.education.length > 0 ? data.education : [{ id: 'empty', degree: '[Degree]', school: '[School]', startDate: 'Start Year', endDate: 'End Year' }]).map(edu => (
+                      <div key={edu.id} className="flex justify-between items-baseline">
+                        <div>
+                          <h4 className="text-[11px] font-bold text-slate-900">{edu.degree}</h4>
+                          <p className="text-[10px] text-slate-500 font-medium">{edu.school}</p>
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-bold">{edu.startDate} — {edu.endDate}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </>
+        ) : template === 'tech-stack' ? (
+          /* Tech-Stack Specialist: Single-column, focus on badges */
+          <>
+            <header className="mb-10">
+              <h2 className="text-4xl font-black text-brand-primary mb-2">
+                {data.personalInfo.fullName || "[Your Name]"}
+              </h2>
+              <div className="flex flex-wrap gap-4 text-[11px] text-slate-500 uppercase font-black tracking-widest border-t-2 border-brand-primary pt-3">
+                <span>{data.personalInfo.jobTitle || "[Job Title]"}</span>
+                <a href={`mailto:${data.personalInfo.email}`} className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline">{data.personalInfo.email || "[Email]"}</a>
+                <span>{data.personalInfo.phone || "[Phone]"}</span>
+                {data.personalInfo.linkedin && (
+                  <a 
+                    href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline"
+                  >
+                    LinkedIn
+                  </a>
+                )}
+              </div>
+            </header>
+
+            <div className="space-y-10">
+              {/* Summary */}
+              <section>
+                <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-4 uppercase tracking-widest">About</h3>
+                <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
+                  {data.summary || "[Professional profile summary goes here...]"}
+                </p>
+              </section>
+
+              {/* Stack / Skills */}
+              <section>
+                <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Stack</h3>
+                <div className="flex flex-wrap gap-2">
+                  {data.skills.length > 0 ? data.skills.flatMap(s => s.items.split(',')).filter(item => item.trim()).map((skill, i) => (
+                    <span key={i} className="px-3 py-1 bg-slate-900 text-white rounded text-[10px] font-bold uppercase tracking-tight">{skill.trim()}</span>
+                  )) : <span className="text-slate-300 italic text-xs">[Add skills to see stack...]</span>}
+                </div>
+              </section>
+
+              {/* Experience */}
+              <section className="space-y-8">
+                <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-2 uppercase tracking-widest">Logs</h3>
+                {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]' }]).map(exp => (
+                  <div key={exp.id} className="border-l-4 border-slate-900 pl-6 py-1">
+                    <h4 className="text-sm font-black text-slate-900">{exp.jobTitle} <span className="text-brand-secondary">@</span> {exp.employer}</h4>
+                    <p className="text-[10px] text-slate-400 mb-3 font-bold">{exp.startDate} - {exp.endDate}</p>
+                    <p className="text-[12px] text-slate-600 leading-relaxed">{exp.description}</p>
+                  </div>
+                ))}
+              </section>
+              
+              {/* Education */}
+              {data.education.length > 0 && (
+                <section>
+                  <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Education</h3>
+                  <div className="space-y-4">
+                    {data.education.map(edu => (
+                      <div key={edu.id}>
+                        <h4 className="text-[12px] font-black text-slate-900">{edu.degree}</h4>
+                        <p className="text-[11px] text-slate-500 font-bold">{edu.school} | {edu.startDate} — {edu.endDate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          </>
+        ) : template === 'classic-executive' ? (
+          /* Classic Executive: Centered single-column, serif */
+          <>
+            <header className="text-center mb-12 border-b-2 border-slate-900 pb-8">
+              <h2 className="text-5xl font-serif font-bold text-slate-900 mb-4">
+                {data.personalInfo.fullName || "[Your Name]"}
+              </h2>
+              <div className="flex flex-wrap justify-center gap-4 text-sm font-serif italic text-slate-600">
+                <span>{data.personalInfo.jobTitle || "[Job Title]"}</span>
+                {data.personalInfo.email && <><span>•</span><a href={`mailto:${data.personalInfo.email}`} className="hover:text-slate-900 transition-colors uppercase tracking-widest text-[10px] font-bold not-italic font-sans">{data.personalInfo.email}</a></>}
+                {data.personalInfo.phone && <><span>•</span><span>{data.personalInfo.phone}</span></>}
+                {data.personalInfo.linkedin && (
+                  <>
+                    <span>•</span>
+                    <a 
+                      href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="hover:text-slate-900 transition-colors uppercase tracking-widest text-[10px] font-bold not-italic font-sans"
+                    >
+                      LinkedIn
+                    </a>
+                  </>
+                )}
+                {data.personalInfo.location && <><span>•</span><span>{data.personalInfo.location}</span></>}
+              </div>
+            </header>
+            
+            <div className="space-y-10 font-serif">
+              {/* Summary */}
+              {data.summary && (
+                <section>
+                  <h3 className="text-center text-sm font-bold text-slate-900 mb-4 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Professional Profile</h3>
+                  <p className="text-sm text-slate-700 leading-relaxed text-center italic px-10">
+                    {data.summary}
+                  </p>
+                </section>
+              )}
+
+              {/* Work Experience */}
+              <section>
+                <h3 className="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Professional Experience</h3>
+                <div className="space-y-10">
+                  {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]', city: '[City]' }]).map(exp => (
+                    <div key={exp.id}>
+                      <div className="flex justify-between items-baseline mb-2">
+                        <h4 className="text-base font-bold text-slate-900">{exp.jobTitle}</h4>
+                        <span className="text-[11px] font-bold text-slate-600">{exp.startDate} — {exp.endDate}</span>
+                      </div>
+                      <p className="text-xs font-bold italic text-slate-500 mb-4">{exp.employer}, {exp.city}</p>
+                      <p className="text-[13px] text-slate-700 leading-relaxed text-justify">{exp.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Education */}
+              <section className="page-break">
+                <h3 className="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Education</h3>
+                <div className="space-y-4">
+                  {(data.education.length > 0 ? data.education : [{ id: 'empty', degree: '[Degree]', school: '[School]', startDate: 'Start Year', endDate: 'End Year' }]).map(edu => (
+                    <div key={edu.id} className="text-center">
+                      <h4 className="text-sm font-bold text-slate-900">{edu.degree}</h4>
+                      <p className="text-xs text-slate-500 italic">{edu.school}, {edu.startDate} — {edu.endDate}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              
+              {/* Skills */}
+              {data.skills.length > 0 && (
+                <section>
+                  <h3 className="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Technical Expertise</h3>
+                  <div className="flex flex-wrap justify-center gap-x-8 gap-y-2">
+                    {data.skills.map(group => (
+                      <div key={group.id} className="text-center">
+                        <span className="text-[12px] font-black uppercase text-slate-900 block mb-1">{group.category}</span>
+                        <p className="text-xs text-slate-700">{group.items}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          </>
+        ) : (
+          /* Bold Impact: Timeline borders */
+          <>
+            <header className="mb-12 bg-slate-900 text-white -mx-12 -mt-12 p-16 shadow-inner w-[calc(100%+96px)]">
+              <h2 className="text-5xl font-black mb-3 leading-none">
+                {data.personalInfo.fullName || "[Your Name]"}
+              </h2>
+              <p className="text-lg font-black text-brand-accent uppercase tracking-[0.3em]">
+                {data.personalInfo.jobTitle || "[Job Title]"}
+              </p>
+              <div className="mt-8 flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <a href={`mailto:${data.personalInfo.email}`} className="hover:text-brand-accent transition-colors">{data.personalInfo.email}</a>
+                <span>{data.personalInfo.phone}</span>
+                {data.personalInfo.linkedin && (
+                  <a 
+                    href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover:text-brand-accent transition-colors"
+                  >
+                    LinkedIn
+                  </a>
+                )}
+                <span>{data.personalInfo.location}</span>
+              </div>
+            </header>
+
+            <div className="space-y-16">
+              {/* Summary */}
+              <section className="relative pl-12">
+                <div className="absolute left-0 top-0 w-2 h-full bg-brand-secondary opacity-10 rounded-full" />
+                <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-4">
+                  01 <span className="w-12 h-[2px] bg-brand-secondary" /> Profile
+                </h3>
+                <p className="text-base text-slate-600 leading-relaxed font-bold opacity-80 italic">
+                  "{data.summary || "[Write your profile impact statement here...]"}"
+                </p>
+              </section>
+
+              {/* Timeline Experience */}
+              <section className="relative pl-12">
+                <div className="absolute left-0 top-0 w-2 h-full bg-brand-secondary opacity-20 rounded-full" />
+                <h3 className="text-xl font-black text-slate-900 mb-10 flex items-center gap-4">
+                  02 <span className="w-12 h-[2px] bg-brand-secondary" /> Experience
+                </h3>
+                <div className="space-y-12">
+                  {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Describe your achievements...]' }]).map((exp) => (
+                    <div key={exp.id} className="relative group">
+                      <div className="absolute -left-12 top-2 w-8 h-8 rounded-full bg-brand-secondary flex items-center justify-center text-white font-black text-[10px] group-hover:scale-125 transition-transform">
+                        ✓
+                      </div>
+                      <h4 className="text-lg font-black text-slate-900 mb-1">{exp.jobTitle}</h4>
+                      <p className="text-xs font-black text-brand-secondary mb-4 uppercase tracking-widest">{exp.employer} | {exp.startDate} - {exp.endDate}</p>
+                      <p className="text-sm text-slate-600 leading-relaxed font-medium opacity-90 border-l-2 border-slate-100 pl-6">{exp.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Skills & Education side by side */}
+              <div className="grid grid-cols-2 gap-12 pl-12 relative">
+                <div className="absolute left-0 top-0 w-2 h-full bg-brand-secondary opacity-10 rounded-full" />
+                
+                <section>
+                  <h3 className="text-sm font-black text-slate-900 mb-6 uppercase tracking-widest">Stack</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {data.skills.map(group => (
+                      <div key={group.id} className="w-full">
+                        <span className="text-[10px] font-black uppercase text-slate-900 block mb-2">{group.category}</span>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {group.items.split(',').filter(i => i.trim()).map((s, i) => (
+                            <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] font-black uppercase">{s.trim()}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-sm font-black text-slate-900 mb-6 uppercase tracking-widest">Edge</h3>
+                  <div className="space-y-4">
+                    {data.education.map(edu => (
+                      <div key={edu.id}>
+                        <p className="text-xs font-black text-slate-900">{edu.degree}</p>
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">{edu.school} | {edu.startDate} — {edu.endDate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+);
+
+ResumePreview.displayName = 'ResumePreview';
+
 export default function App() {
   const [resumeData, setResumeData] = useState<ResumeData>(INITIAL_DATA);
   const [activeStep, setActiveStep] = useState(1);
@@ -326,7 +696,33 @@ export default function App() {
           <span className={`text-xl font-black tracking-tight font-serif ${isDarkMode ? 'text-white' : 'text-blue-950'}`}>Resume Maker</span>
         </div>
         <div className="flex items-center gap-4">
-
+          <button 
+            onClick={saveDraft}
+            disabled={saveStatus === 'saving'}
+            className={`flex items-center gap-2 px-4 py-2 font-bold rounded-lg transition-all active:scale-95 duration-150 text-sm ${
+              saveStatus === 'success' 
+                ? 'bg-green-500 text-white' 
+                : saveStatus === 'error'
+                ? 'bg-red-500 text-white'
+                : isDarkMode 
+                ? 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700' 
+                : 'bg-white border border-brand-primary text-brand-primary hover:bg-slate-50'
+            }`}
+          >
+            {saveStatus === 'saving' ? (
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                <CloudUpload size={18} />
+              </motion.div>
+            ) : saveStatus === 'success' ? (
+              <CheckCircle2 size={18} />
+            ) : saveStatus === 'error' ? (
+              <AlertCircle size={18} />
+            ) : (
+              <FolderOpen size={18} />
+            )}
+            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved' : saveStatus === 'error' ? 'Error' : 'Save Draft'}
+          </button>
+          
           <button 
             onClick={handleExportPDF}
             className="px-4 py-2 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/90 transition-colors active:scale-95 duration-150 text-sm"
@@ -599,6 +995,7 @@ export default function App() {
               <button 
                 onClick={() => {
                   if (activeStep < 5) setActiveStep(prev => prev + 1);
+                  else handleExportPDF();
                 }}
                 className="px-8 py-3 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/95 transition-all text-sm shadow-md active:scale-95"
               >
@@ -609,134 +1006,11 @@ export default function App() {
 
           {/* Live Canvas (Preview) */}
           <section className="canvas-bg flex justify-center items-start overflow-y-auto p-12 custom-scrollbar relative">
-            <motion.div 
-              layout
+            <ResumePreview 
               ref={resumeRef}
-              className={`bg-white w-[595px] min-h-[842px] shadow-2xl relative mb-12 flex font-sans overflow-hidden ${
-                selectedTemplate === 'modern-sidebar' ? 'flex-row' : 
-                selectedTemplate === 'tech-stack' ? 'font-mono p-12 flex-col' : 
-                selectedTemplate === 'classic-executive' ? 'p-16 flex-col' :
-                'p-12 flex-col'
-              }`}
-            >
-              {selectedTemplate === 'modern-sidebar' ? (
-                /* Modern Sidebar: 30/70 asymmetric layout */
-                <>
-                  <div className="w-[180px] bg-slate-50 p-8 flex flex-col gap-8 h-full border-r border-slate-100">
-                    <div>
-                      <h2 className="text-lg font-bold text-slate-900 mb-1 leading-tight">{resumeData.personalInfo.fullName}</h2>
-                      <p className="text-[9px] font-black text-brand-primary uppercase tracking-wider">{resumeData.personalInfo.jobTitle}</p>
-                    </div>
-                    <div className="space-y-3">
-                      <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact</h4>
-                      <div className="space-y-2 text-[9px] text-slate-600 font-medium">
-                        <p className="break-all">{resumeData.personalInfo.email}</p>
-                        <p>{resumeData.personalInfo.phone}</p>
-                        <p>{resumeData.personalInfo.location}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex-1 p-10 space-y-8">
-                    {/* Experiences for Modern Sidebar */}
-                    <section>
-                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Experience</h3>
-                      <div className="space-y-6">
-                        {resumeData.experiences.map(exp => (
-                          <div key={exp.id}>
-                            <h4 className="text-[11px] font-bold text-slate-900">{exp.jobTitle}</h4>
-                            <p className="text-[9px] text-brand-secondary font-bold mb-2">{exp.employer}</p>
-                            <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-3">{exp.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-                </>
-              ) : selectedTemplate === 'tech-stack' ? (
-                /* Tech-Stack Specialist: Single-column, focus on badges */
-                <>
-                  <header className="mb-10">
-                    <h2 className="text-3xl font-black text-brand-primary mb-2">{resumeData.personalInfo.fullName}</h2>
-                    <div className="flex flex-wrap gap-4 text-[10px] text-slate-500 uppercase tracking-widest">
-                      <span>{resumeData.personalInfo.jobTitle}</span>
-                      <span>{resumeData.personalInfo.email}</span>
-                    </div>
-                  </header>
-                  <section className="mb-10">
-                    <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Stack</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {resumeData.skills.flatMap(s => s.items.split(',')).map(skill => (
-                        <span key={skill} className="px-3 py-1 bg-slate-100 rounded-md text-[10px] font-bold text-slate-700">{skill.trim()}</span>
-                      ))}
-                    </div>
-                  </section>
-                  {/* Experience */}
-                  <section className="space-y-8">
-                    {resumeData.experiences.map(exp => (
-                      <div key={exp.id} className="border-l-2 border-slate-100 pl-6">
-                        <h4 className="text-sm font-black text-slate-900">{exp.jobTitle} @ {exp.employer}</h4>
-                        <p className="text-[10px] text-slate-400 mb-3">{exp.startDate} - {exp.endDate}</p>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">{exp.description}</p>
-                      </div>
-                    ))}
-                  </section>
-                </>
-              ) : selectedTemplate === 'classic-executive' ? (
-                /* Classic Executive: Centered single-column, serif */
-                <>
-                  <header className="text-center mb-10 border-b-2 border-slate-900 pb-6">
-                    <h2 className="text-4xl font-serif font-bold text-slate-900 mb-2">{resumeData.personalInfo.fullName}</h2>
-                    <div className="flex justify-center gap-4 text-xs font-medium text-slate-600">
-                      <span>{resumeData.personalInfo.jobTitle}</span>
-                      <span>•</span>
-                      <span>{resumeData.personalInfo.email}</span>
-                      <span>•</span>
-                      <span>{resumeData.personalInfo.phone}</span>
-                    </div>
-                  </header>
-                  <div className="space-y-10">
-                    <section>
-                      <h3 className="text-center text-sm font-serif font-bold italic text-slate-900 mb-4 uppercase tracking-[0.2em] border-b border-slate-200 pb-1">Professional Experience</h3>
-                      <div className="space-y-8">
-                        {resumeData.experiences.map(exp => (
-                          <div key={exp.id}>
-                            <div className="flex justify-between items-baseline mb-1">
-                              <h4 className="text-sm font-bold text-slate-900">{exp.jobTitle}</h4>
-                              <span className="text-[10px] font-bold text-slate-500">{exp.startDate} — {exp.endDate}</span>
-                            </div>
-                            <p className="text-xs font-serif italic text-slate-600 mb-3">{exp.employer}, {exp.city}</p>
-                            <p className="text-[11px] text-slate-700 leading-relaxed font-serif">{exp.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-                </>
-              ) : (
-                /* Bold Impact: Timeline borders */
-                <>
-                  <header className="mb-12 bg-slate-900 text-white -mx-12 -mt-12 p-12">
-                    <h2 className="text-4xl font-black mb-2">{resumeData.personalInfo.fullName}</h2>
-                    <p className="text-sm font-bold text-brand-accent uppercase tracking-[0.2em]">{resumeData.personalInfo.jobTitle}</p>
-                  </header>
-                  <div className="space-y-12 mt-12">
-                    <section className="relative">
-                      <h3 className="text-lg font-black text-slate-900 mb-8 border-l-4 border-brand-secondary pl-4">Career Journey</h3>
-                      <div className="space-y-12">
-                        {resumeData.experiences.map((exp, idx) => (
-                          <div key={exp.id} className="relative pl-8 before:content-[''] before:absolute before:left-0 before:top-2 before:w-1 before:h-[calc(100%+30px)] before:bg-slate-100 last:before:h-0">
-                            <div className="absolute left-[-5px] top-1 w-3 h-3 rounded-full bg-brand-secondary shadow-[0_0_0_4px_white]" />
-                            <h4 className="text-sm font-black text-slate-900">{exp.jobTitle}</h4>
-                            <p className="text-[10px] font-black text-brand-secondary mb-3">{exp.employer} | {exp.startDate} - {exp.endDate}</p>
-                            <p className="text-[11px] text-slate-600 leading-relaxed opacity-80">{exp.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-                </>
-              )}
-            </motion.div>
+              data={resumeData}
+              template={selectedTemplate}
+            />
 
             {/* Preview FAB Controls */}
             <div className="fixed bottom-10 right-10 flex flex-col items-end gap-4 z-[80]">
@@ -814,50 +1088,15 @@ export default function App() {
             <div className="relative">
               <button 
                 onClick={() => setIsFullScreenPreview(false)}
-                className="fixed top-8 right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                className="fixed top-8 right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-[110]"
               >
                 <X size={24} />
               </button>
-              <div 
-                className={`bg-white w-[794px] min-h-[1123px] p-20 shadow-2xl relative mb-12 flex flex-col font-sans origin-top scale-[1.1] ${
-                  selectedTemplate === 'modern-sidebar' ? 'flex-row' : 
-                  selectedTemplate === 'tech-stack' ? 'font-mono' : ''
-                }`}
-              >
-                {selectedTemplate === 'modern-sidebar' ? (
-                  <>
-                    <div className="w-1/3 bg-slate-50 p-8 h-full rounded-l-3xl">
-                      {/* Sidebar Content */}
-                      <div className="mb-10">
-                        <h2 className="text-3xl font-black text-brand-primary mb-2">{resumeData.personalInfo.fullName}</h2>
-                        <p className="text-sm font-bold text-brand-secondary uppercase">{resumeData.personalInfo.jobTitle}</p>
-                      </div>
-                      <div className="space-y-4 text-xs text-slate-500">
-                        <p>{resumeData.personalInfo.email}</p>
-                        <p>{resumeData.personalInfo.phone}</p>
-                        <p>{resumeData.personalInfo.location}</p>
-                      </div>
-                    </div>
-                    <div className="flex-1 p-10">
-                      {/* Main Content */}
-                      <section className="mb-10">
-                        <h3 className="text-xl font-bold border-b-2 border-brand-primary mb-4 pb-1">Experience</h3>
-                        {/* Repeat items... */}
-                      </section>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Standard centralized or full width layouts */}
-                    <header className={`mb-12 ${selectedTemplate === 'classic-executive' ? 'text-center' : 'text-left'}`}>
-                      <h2 className={`font-black tracking-tight mb-4 ${selectedTemplate === 'classic-executive' ? 'font-serif text-5xl border-b-2 border-slate-900 pb-2' : 'text-5xl'}`}>
-                        {resumeData.personalInfo.fullName || "Your Name"}
-                      </h2>
-                      {/* Subheader info... */}
-                    </header>
-                    {/* ... rest of full screen view ... */}
-                  </>
-                )}
+              <div className="origin-top scale-[1.1] transition-transform duration-300 hover:scale-[1.15]">
+                <ResumePreview 
+                  data={resumeData}
+                  template={selectedTemplate}
+                />
               </div>
             </div>
           </motion.div>
