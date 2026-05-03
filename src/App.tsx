@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
+  ArrowDownToLine,
   LogIn,
   X,
   Type,
@@ -475,6 +476,7 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [session, setSession] = useState<any>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<any[]>([]);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -530,6 +532,7 @@ export default function App() {
       
       setCurrentDraftId(id);
       setSaveStatus('success');
+      setLastSaved(new Date().toLocaleTimeString());
       fetchDrafts(session.user.id);
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (error: any) {
@@ -542,7 +545,7 @@ export default function App() {
 
   const loadDraft = (draft: any) => {
     setResumeData(draft.content);
-    setSelectedTemplate(draft.content.template || 'professional');
+    setSelectedTemplate(draft.content.template || 'classic-executive');
     setCurrentDraftId(draft.id);
     setIsDraftsModalOpen(false);
     setIsSettingsOpen(false);
@@ -734,10 +737,35 @@ export default function App() {
           <span className={`text-xl font-black tracking-tight font-serif ${isDarkMode ? 'text-white' : 'text-blue-950'}`}>Resume Maker</span>
         </div>
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 border rounded-full">
+            <div className={`w-2 h-2 rounded-full ${saveStatus === 'saving' ? 'bg-amber-400 animate-pulse' : saveStatus === 'success' ? 'bg-green-500' : 'bg-slate-300'}`} />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+              {saveStatus === 'saving' ? 'Saving...' : lastSaved ? `Saved ${lastSaved}` : 'Not Saved'}
+            </span>
+          </div>
+          
+          <button 
+            onClick={() => setIsDraftsModalOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-200 text-sm font-medium"
+          >
+            <FolderOpen size={18} />
+            My Drafts
+          </button>
+
+          <button 
+            onClick={saveDraft}
+            disabled={saveStatus === 'saving'}
+            className="flex items-center gap-2 px-4 py-2 border border-brand-primary text-brand-primary font-bold rounded-lg hover:bg-brand-primary hover:text-white transition-all active:scale-95 duration-150 text-sm"
+          >
+            <CloudUpload size={18} />
+            Save Draft
+          </button>
+
           <button 
             onClick={handleExportPDF}
-            className="px-4 py-2 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/90 transition-colors active:scale-95 duration-150 text-sm"
+            className="px-6 py-2 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/95 shadow-lg shadow-brand-primary/20 transition-all active:scale-95 duration-150 text-sm flex items-center gap-2"
           >
+            <ArrowDownToLine size={18} />
             Export PDF
           </button>
           <div className="flex gap-2 ml-4 border-l pl-4 border-brand-outline-variant relative">
