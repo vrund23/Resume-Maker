@@ -81,9 +81,20 @@ const INITIAL_DATA: ResumeData = {
 
 const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; template: string; }>(
   ({ data, template }, ref) => {
+    if (!data || !data.personalInfo) {
+      return (
+        <div ref={ref} className="bg-white w-[595px] min-h-[842px] shadow-2xl flex items-center justify-center">
+          <p className="text-slate-400">No data available for preview</p>
+        </div>
+      );
+    }
+
+    const { personalInfo, experiences = [], education = [], skills = [], summary = "" } = data;
+
     return (
       <div 
         ref={ref}
+        id="resume-preview-root"
         className={`bg-white shadow-2xl relative flex font-sans overflow-hidden transition-all duration-500 ${
           template === 'modern-sidebar' ? 'flex-row' : 
           template === 'tech-stack' ? 'font-mono p-12 flex-col' : 
@@ -98,10 +109,10 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
             <div className="w-[200px] bg-slate-50 p-8 flex flex-col gap-8 h-full border-r border-slate-100 flex-shrink-0">
               <div className="space-y-1">
                 <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  {data.personalInfo.fullName || "[Your Name]"}
+                  {personalInfo.fullName || "[Your Name]"}
                 </h2>
                 <p className="text-[10px] font-black text-brand-primary uppercase tracking-wider">
-                  {data.personalInfo.jobTitle || "[Job Title]"}
+                  {personalInfo.jobTitle || "[Job Title]"}
                 </p>
               </div>
               
@@ -110,32 +121,32 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                   <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact</h4>
                   <div className="space-y-2 text-[10px] text-slate-600 font-medium">
                     <p className="break-all">
-                      <a href={`mailto:${data.personalInfo.email}`} className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline">
-                        {data.personalInfo.email || "[Email]"}
+                      <a href={`mailto:${personalInfo.email}`} className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline">
+                        {personalInfo.email || "[Email]"}
                       </a>
                     </p>
-                    <p>{data.personalInfo.phone || "[Phone]"}</p>
-                    {data.personalInfo.linkedin && (
+                    <p>{personalInfo.phone || "[Phone]"}</p>
+                    {personalInfo.linkedin && (
                       <p className="break-all">
                         <a 
-                          href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                          href={personalInfo.linkedin.startsWith('http') ? personalInfo.linkedin : `https://${personalInfo.linkedin}`} 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline"
                         >
-                          {data.personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}
+                          {personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}
                         </a>
                       </p>
                     )}
-                    <p>{data.personalInfo.location || "[Location]"}</p>
+                    <p>{personalInfo.location || "[Location]"}</p>
                   </div>
                 </div>
 
-                {data.skills.length > 0 && (
+                {skills.length > 0 && (
                   <div className="space-y-3">
                     <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Expertise</h4>
                     <div className="space-y-4">
-                      {data.skills.map(group => (
+                      {skills.map(group => (
                         <div key={group.id}>
                           <p className="text-[10px] font-black text-slate-900 uppercase mb-1">{group.category || "[Category]"}</p>
                           <p className="text-[10px] text-slate-700 leading-tight">{group.items || "[Skills]"}</p>
@@ -153,7 +164,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                 <section>
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Profile</h3>
                   <p className="text-[11px] text-slate-600 leading-relaxed italic">
-                    {data.summary || "[Professional profile summary goes here...]"}
+                    {summary || "[Professional profile summary goes here...]"}
                   </p>
                 </section>
 
@@ -161,7 +172,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                 <section>
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Experience</h3>
                   <div className="space-y-6">
-                    {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]' }]).map(exp => (
+                    {(experiences.length > 0 ? experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]' }]).map(exp => (
                       <div key={exp.id}>
                         <div className="flex justify-between items-baseline mb-1">
                           <h4 className="text-[11px] font-bold text-slate-900">{exp.jobTitle}</h4>
@@ -178,7 +189,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                 <section>
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Education</h3>
                   <div className="space-y-4">
-                    {(data.education.length > 0 ? data.education : [{ id: 'empty', degree: '[Degree]', school: '[School]', startDate: 'Start Year', endDate: 'End Year' }]).map(edu => (
+                    {(education.length > 0 ? education : [{ id: 'empty', degree: '[Degree]', school: '[School]', startDate: 'Start Year', endDate: 'End Year' }]).map(edu => (
                       <div key={edu.id} className="flex justify-between items-baseline">
                         <div>
                           <h4 className="text-[11px] font-bold text-slate-900">{edu.degree}</h4>
@@ -197,15 +208,15 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
           <>
             <header className="mb-10">
               <h2 className="text-4xl font-black text-brand-primary mb-2">
-                {data.personalInfo.fullName || "[Your Name]"}
+                {personalInfo.fullName || "[Your Name]"}
               </h2>
               <div className="flex flex-wrap gap-4 text-[11px] text-slate-500 uppercase font-black tracking-widest border-t-2 border-brand-primary pt-3">
-                <span>{data.personalInfo.jobTitle || "[Job Title]"}</span>
-                <a href={`mailto:${data.personalInfo.email}`} className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline">{data.personalInfo.email || "[Email]"}</a>
-                <span>{data.personalInfo.phone || "[Phone]"}</span>
-                {data.personalInfo.linkedin && (
+                <span>{personalInfo.jobTitle || "[Job Title]"}</span>
+                <a href={`mailto:${personalInfo.email}`} className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline">{personalInfo.email || "[Email]"}</a>
+                <span>{personalInfo.phone || "[Phone]"}</span>
+                {personalInfo.linkedin && (
                   <a 
-                    href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                    href={personalInfo.linkedin.startsWith('http') ? personalInfo.linkedin : `https://${personalInfo.linkedin}`} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline"
@@ -221,7 +232,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               <section>
                 <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-4 uppercase tracking-widest">About</h3>
                 <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
-                  {data.summary || "[Professional profile summary goes here...]"}
+                  {summary || "[Professional profile summary goes here...]"}
                 </p>
               </section>
 
@@ -229,7 +240,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               <section>
                 <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Stack</h3>
                 <div className="flex flex-wrap gap-2">
-                  {data.skills.length > 0 ? data.skills.flatMap(s => s.items.split(',')).filter(item => item.trim()).map((skill, i) => (
+                  {skills.length > 0 ? skills.flatMap(s => (s.items || "").split(',')).filter(item => item.trim()).map((skill, i) => (
                     <span key={i} className="px-3 py-1 bg-slate-900 text-white rounded text-[10px] font-bold uppercase tracking-tight">{skill.trim()}</span>
                   )) : <span className="text-slate-300 italic text-xs">[Add skills to see stack...]</span>}
                 </div>
@@ -238,7 +249,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               {/* Experience */}
               <section className="space-y-8">
                 <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-2 uppercase tracking-widest">Logs</h3>
-                {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]' }]).map(exp => (
+                {(experiences.length > 0 ? experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]' }]).map(exp => (
                   <div key={exp.id} className="border-l-4 border-slate-900 pl-6 py-1">
                     <h4 className="text-sm font-black text-slate-900">{exp.jobTitle} <span className="text-brand-secondary">@</span> {exp.employer}</h4>
                     <p className="text-[10px] text-slate-400 mb-3 font-bold">{exp.startDate} - {exp.endDate}</p>
@@ -248,11 +259,11 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               </section>
               
               {/* Education */}
-              {data.education.length > 0 && (
+              {education.length > 0 && (
                 <section>
                   <h3 className="text-xs font-black bg-brand-primary text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Education</h3>
                   <div className="space-y-4">
-                    {data.education.map(edu => (
+                    {education.map(edu => (
                       <div key={edu.id}>
                         <h4 className="text-[12px] font-black text-slate-900">{edu.degree}</h4>
                         <p className="text-[11px] text-slate-500 font-bold">{edu.school} | {edu.startDate} — {edu.endDate}</p>
@@ -268,17 +279,17 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
           <>
             <header className="text-center mb-12 border-b-2 border-slate-900 pb-8">
               <h2 className="text-5xl font-serif font-bold text-slate-900 mb-4">
-                {data.personalInfo.fullName || "[Your Name]"}
+                {personalInfo.fullName || "[Your Name]"}
               </h2>
               <div className="flex flex-wrap justify-center gap-4 text-sm font-serif italic text-slate-600">
-                <span>{data.personalInfo.jobTitle || "[Job Title]"}</span>
-                {data.personalInfo.email && <><span>•</span><a href={`mailto:${data.personalInfo.email}`} className="hover:text-slate-900 transition-colors uppercase tracking-widest text-[10px] font-bold not-italic font-sans">{data.personalInfo.email}</a></>}
-                {data.personalInfo.phone && <><span>•</span><span>{data.personalInfo.phone}</span></>}
-                {data.personalInfo.linkedin && (
+                <span>{personalInfo.jobTitle || "[Job Title]"}</span>
+                {personalInfo.email && <><span>•</span><a href={`mailto:${personalInfo.email}`} className="hover:text-slate-900 transition-colors uppercase tracking-widest text-[10px] font-bold not-italic font-sans">{personalInfo.email}</a></>}
+                {personalInfo.phone && <><span>•</span><span>{personalInfo.phone}</span></>}
+                {personalInfo.linkedin && (
                   <>
                     <span>•</span>
                     <a 
-                      href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                      href={personalInfo.linkedin.startsWith('http') ? personalInfo.linkedin : `https://${personalInfo.linkedin}`} 
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="hover:text-slate-900 transition-colors uppercase tracking-widest text-[10px] font-bold not-italic font-sans"
@@ -287,17 +298,17 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                     </a>
                   </>
                 )}
-                {data.personalInfo.location && <><span>•</span><span>{data.personalInfo.location}</span></>}
+                {personalInfo.location && <><span>•</span><span>{personalInfo.location}</span></>}
               </div>
             </header>
             
             <div className="space-y-10 font-serif">
               {/* Summary */}
-              {data.summary && (
+              {summary && (
                 <section>
                   <h3 className="text-center text-sm font-bold text-slate-900 mb-4 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Professional Profile</h3>
                   <p className="text-sm text-slate-700 leading-relaxed text-center italic px-10">
-                    {data.summary}
+                    {summary}
                   </p>
                 </section>
               )}
@@ -306,7 +317,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               <section>
                 <h3 className="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Professional Experience</h3>
                 <div className="space-y-10">
-                  {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]', city: '[City]' }]).map(exp => (
+                  {(experiences.length > 0 ? experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Job description...]', city: '[City]' }]).map(exp => (
                     <div key={exp.id}>
                       <div className="flex justify-between items-baseline mb-2">
                         <h4 className="text-base font-bold text-slate-900">{exp.jobTitle}</h4>
@@ -323,7 +334,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               <section className="page-break">
                 <h3 className="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Education</h3>
                 <div className="space-y-4">
-                  {(data.education.length > 0 ? data.education : [{ id: 'empty', degree: '[Degree]', school: '[School]', startDate: 'Start Year', endDate: 'End Year' }]).map(edu => (
+                  {(education.length > 0 ? education : [{ id: 'empty', degree: '[Degree]', school: '[School]', startDate: 'Start Year', endDate: 'End Year' }]).map(edu => (
                     <div key={edu.id} className="text-center">
                       <h4 className="text-sm font-bold text-slate-900">{edu.degree}</h4>
                       <p className="text-xs text-slate-500 italic">{edu.school}, {edu.startDate} — {edu.endDate}</p>
@@ -333,11 +344,11 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               </section>
               
               {/* Skills */}
-              {data.skills.length > 0 && (
+              {skills.length > 0 && (
                 <section>
                   <h3 className="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Technical Expertise</h3>
                   <div className="flex flex-wrap justify-center gap-x-8 gap-y-2">
-                    {data.skills.map(group => (
+                    {skills.map(group => (
                       <div key={group.id} className="text-center">
                         <span className="text-[12px] font-black uppercase text-slate-900 block mb-1">{group.category}</span>
                         <p className="text-xs text-slate-700">{group.items}</p>
@@ -351,19 +362,19 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
         ) : (
           /* Bold Impact: Timeline borders */
           <>
-            <header className="mb-12 bg-slate-900 text-white -mx-12 -mt-12 p-16 shadow-inner w-[calc(100%+96px)]">
+            <header className="mb-12 bg-slate-900 text-white p-12 shadow-inner w-full">
               <h2 className="text-5xl font-black mb-3 leading-none">
-                {data.personalInfo.fullName || "[Your Name]"}
+                {personalInfo.fullName || "[Your Name]"}
               </h2>
               <p className="text-lg font-black text-brand-accent uppercase tracking-[0.3em]">
-                {data.personalInfo.jobTitle || "[Job Title]"}
+                {personalInfo.jobTitle || "[Job Title]"}
               </p>
               <div className="mt-8 flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <a href={`mailto:${data.personalInfo.email}`} className="hover:text-brand-accent transition-colors">{data.personalInfo.email}</a>
-                <span>{data.personalInfo.phone}</span>
-                {data.personalInfo.linkedin && (
+                <a href={`mailto:${personalInfo.email}`} className="hover:text-brand-accent transition-colors">{personalInfo.email}</a>
+                <span>{personalInfo.phone}</span>
+                {personalInfo.linkedin && (
                   <a 
-                    href={data.personalInfo.linkedin.startsWith('http') ? data.personalInfo.linkedin : `https://${data.personalInfo.linkedin}`} 
+                    href={personalInfo.linkedin.startsWith('http') ? personalInfo.linkedin : `https://${personalInfo.linkedin}`} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="hover:text-brand-accent transition-colors"
@@ -371,7 +382,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                     LinkedIn
                   </a>
                 )}
-                <span>{data.personalInfo.location}</span>
+                <span>{personalInfo.location}</span>
               </div>
             </header>
 
@@ -383,7 +394,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                   01 <span className="w-12 h-[2px] bg-brand-secondary" /> Profile
                 </h3>
                 <p className="text-base text-slate-600 leading-relaxed font-bold opacity-80 italic">
-                  "{data.summary || "[Write your profile impact statement here...]"}"
+                  "{summary || "[Write your profile impact statement here...]"}"
                 </p>
               </section>
 
@@ -394,7 +405,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                   02 <span className="w-12 h-[2px] bg-brand-secondary" /> Experience
                 </h3>
                 <div className="space-y-12">
-                  {(data.experiences.length > 0 ? data.experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Describe your achievements...]' }]).map((exp) => (
+                  {(experiences.length > 0 ? experiences : [{ id: 'empty', jobTitle: '[Job Title]', employer: '[Employer]', startDate: 'Start', endDate: 'End', description: '[Describe your achievements...]' }]).map((exp) => (
                     <div key={exp.id} className="relative group">
                       <div className="absolute -left-12 top-2 w-8 h-8 rounded-full bg-brand-secondary flex items-center justify-center text-white font-black text-[10px] group-hover:scale-125 transition-transform">
                         ✓
@@ -414,11 +425,11 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                 <section>
                   <h3 className="text-sm font-black text-slate-900 mb-6 uppercase tracking-widest">Stack</h3>
                   <div className="flex flex-wrap gap-2">
-                    {data.skills.map(group => (
+                    {skills.map(group => (
                       <div key={group.id} className="w-full">
                         <span className="text-[10px] font-black uppercase text-slate-900 block mb-2">{group.category}</span>
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {group.items.split(',').filter(i => i.trim()).map((s, i) => (
+                          {(group.items || "").split(',').filter(i => i.trim()).map((s, i) => (
                             <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] font-black uppercase">{s.trim()}</span>
                           ))}
                         </div>
@@ -430,7 +441,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                 <section>
                   <h3 className="text-sm font-black text-slate-900 mb-6 uppercase tracking-widest">Edge</h3>
                   <div className="space-y-4">
-                    {data.education.map(edu => (
+                    {education.map(edu => (
                       <div key={edu.id}>
                         <p className="text-xs font-black text-slate-900">{edu.degree}</p>
                         <p className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">{edu.school} | {edu.startDate} — {edu.endDate}</p>
@@ -467,10 +478,12 @@ export default function App() {
   const resumeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then((result) => {
+      if (result.data) {
+        setSession(result.data.session);
+        if (result.data.session) fetchDrafts(result.data.session.user.id);
+      }
       setIsLoadingSession(false);
-      if (session) fetchDrafts(session.user.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -497,7 +510,7 @@ export default function App() {
     if (!session?.user) return;
     setSaveStatus('saving');
     try {
-      const id = currentDraftId || crypto.randomUUID();
+      const id = currentDraftId || (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11));
       const { error } = await supabase
         .from('resumes')
         .upsert({ 
@@ -535,27 +548,84 @@ export default function App() {
   const handleExportPDF = async () => {
     if (!resumeRef.current) return;
     
-    // Hide controls during capture if necessary, but here we just capture the ref
-    const canvas = await html2canvas(resumeRef.current, {
-      scale: 2,
+    setSaveStatus('saving');
+    
+    const element = resumeRef.current;
+    
+    // Superior capture options to ensure the output perfectly matches the preview
+    const options = {
+      scale: 2, // Consistent high resolution
       useCORS: true,
       logging: false,
-      backgroundColor: '#ffffff'
-    });
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`resume_${resumeData.personalInfo.fullName.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+      backgroundColor: '#ffffff',
+      width: 595,
+      windowWidth: 595,
+      onclone: (clonedDoc: Document) => {
+        const el = clonedDoc.getElementById('resume-preview-root');
+        if (el) {
+          // Disable transitions and flatten layout for capture
+          el.style.transition = 'none';
+          el.style.transform = 'none';
+          el.style.margin = '0';
+          el.style.boxShadow = 'none';
+          el.style.borderRadius = '0';
+          el.style.width = '595px';
+          // Ensure all sub-elements also have transitions disabled
+          const all = el.querySelectorAll('*');
+          all.forEach((node) => {
+            if (node instanceof HTMLElement) {
+              node.style.transition = 'none';
+              node.style.animation = 'none';
+            }
+          });
+        }
+      }
+    };
+
+    try {
+      const canvas = await html2canvas(element, options);
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4',
+        compress: true
+      });
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = canvas.width / 2; // match scale
+      const imgHeight = canvas.height / 2;
+      
+      const ratio = pageWidth / imgWidth;
+      const pdfImgWidth = pageWidth;
+      const pdfImgHeight = imgHeight * ratio;
+      
+      let heightLeft = pdfImgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfImgWidth, pdfImgHeight, undefined, 'FAST');
+      heightLeft -= pageHeight;
+
+      // Add subsequent pages if content overflows
+      while (heightLeft > 0) {
+        position = heightLeft - pdfImgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfImgWidth, pdfImgHeight, undefined, 'FAST');
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`resume_${(resumeData.personalInfo.fullName || "professional").replace(/\s+/g, '_').toLowerCase()}.pdf`);
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (err) {
+      console.error('PDF Export Error:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
   };
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
@@ -697,33 +767,6 @@ export default function App() {
         </div>
         <div className="flex items-center gap-4">
           <button 
-            onClick={saveDraft}
-            disabled={saveStatus === 'saving'}
-            className={`flex items-center gap-2 px-4 py-2 font-bold rounded-lg transition-all active:scale-95 duration-150 text-sm ${
-              saveStatus === 'success' 
-                ? 'bg-green-500 text-white' 
-                : saveStatus === 'error'
-                ? 'bg-red-500 text-white'
-                : isDarkMode 
-                ? 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700' 
-                : 'bg-white border border-brand-primary text-brand-primary hover:bg-slate-50'
-            }`}
-          >
-            {saveStatus === 'saving' ? (
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                <CloudUpload size={18} />
-              </motion.div>
-            ) : saveStatus === 'success' ? (
-              <CheckCircle2 size={18} />
-            ) : saveStatus === 'error' ? (
-              <AlertCircle size={18} />
-            ) : (
-              <FolderOpen size={18} />
-            )}
-            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved' : saveStatus === 'error' ? 'Error' : 'Save Draft'}
-          </button>
-          
-          <button 
             onClick={handleExportPDF}
             className="px-4 py-2 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/90 transition-colors active:scale-95 duration-150 text-sm"
           >
@@ -750,13 +793,6 @@ export default function App() {
                   >
                     {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                     {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                  </button>
-                  <button 
-                    onClick={() => setIsDraftsModalOpen(true)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
-                  >
-                    <FolderOpen size={16} />
-                    View Drafts
                   </button>
                   <button 
                     onClick={() => supabase.auth.signOut()}
