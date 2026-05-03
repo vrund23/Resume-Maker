@@ -60,3 +60,34 @@
   border-bottom-color: var(--color-brand-accent);
   outline: none;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  body * {
+    visibility: hidden;
+  }
+  
+  #resume-preview-root, #resume-preview-root * {
+    visibility: visible;
+  }
+  
+  #resume-preview-root {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    box-shadow: none !important;
+    transform: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

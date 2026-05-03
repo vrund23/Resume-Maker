@@ -6,6 +6,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 import { 
   User, 
   GraduationCap, 
@@ -26,6 +28,7 @@ import {
   CloudUpload,
   CheckCircle2,
   AlertCircle,
+  ArrowRight,
   LogIn,
   X,
   Type,
@@ -551,74 +554,39 @@ export default function App() {
     setSaveStatus('saving');
     
     const element = resumeRef.current;
-    
-    // Superior capture options to ensure the output perfectly matches the preview
-    const options = {
-      scale: 2, // Consistent high resolution
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      width: 595,
-      windowWidth: 595,
-      onclone: (clonedDoc: Document) => {
-        const el = clonedDoc.getElementById('resume-preview-root');
-        if (el) {
-          // Disable transitions and flatten layout for capture
-          el.style.transition = 'none';
-          el.style.transform = 'none';
-          el.style.margin = '0';
-          el.style.boxShadow = 'none';
-          el.style.borderRadius = '0';
-          el.style.width = '595px';
-          // Ensure all sub-elements also have transitions disabled
-          const all = el.querySelectorAll('*');
-          all.forEach((node) => {
-            if (node instanceof HTMLElement) {
-              node.style.transition = 'none';
-              node.style.animation = 'none';
-            }
-          });
+    const fileName = `resume_${(resumeData.personalInfo.fullName || "professional").replace(/\s+/g, '_').toLowerCase()}.pdf`;
+
+    const opt = {
+      margin: 0,
+      filename: fileName,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        windowWidth: 1200, // Kill mobile trigger
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc: Document) => {
+          const el = clonedDoc.getElementById('resume-preview-root');
+          if (el) {
+            el.style.width = '210mm';
+            el.style.minHeight = '297mm';
+            el.style.margin = '0';
+            el.style.boxShadow = 'none';
+            el.style.borderRadius = '0';
+            el.style.transition = 'none';
+            el.style.transform = 'none';
+            el.style.overflow = 'hidden';
+          }
         }
-      }
+      },
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
     try {
-      const canvas = await html2canvas(element, options);
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4',
-        compress: true
-      });
-      
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = canvas.width / 2; // match scale
-      const imgHeight = canvas.height / 2;
-      
-      const ratio = pageWidth / imgWidth;
-      const pdfImgWidth = pageWidth;
-      const pdfImgHeight = imgHeight * ratio;
-      
-      let heightLeft = pdfImgHeight;
-      let position = 0;
-
-      // Add first page
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfImgWidth, pdfImgHeight, undefined, 'FAST');
-      heightLeft -= pageHeight;
-
-      // Add subsequent pages if content overflows
-      while (heightLeft > 0) {
-        position = heightLeft - pdfImgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfImgWidth, pdfImgHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
-      }
-      
-      pdf.save(`resume_${(resumeData.personalInfo.fullName || "professional").replace(/\s+/g, '_').toLowerCase()}.pdf`);
+      await html2pdf().set(opt).from(element).save();
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
@@ -1033,9 +1001,10 @@ export default function App() {
                   if (activeStep < 5) setActiveStep(prev => prev + 1);
                   else handleExportPDF();
                 }}
-                className="px-8 py-3 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/95 transition-all text-sm shadow-md active:scale-95"
+                className="flex items-center gap-2 px-8 py-3 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/95 transition-all text-sm shadow-md active:scale-95"
               >
                 {activeStep === 5 ? "Finalize & Download" : "Next Step"}
+                {activeStep !== 5 && <ArrowRight size={18} />}
               </button>
             </footer>
           </section>
