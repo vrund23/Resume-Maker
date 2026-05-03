@@ -216,7 +216,14 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               </h2>
               <div className="flex flex-wrap gap-4 text-[11px] text-slate-500 uppercase font-black tracking-widest border-t-2 border-brand-primary pt-3">
                 <span>{personalInfo.jobTitle || "[Job Title]"}</span>
-                <a href={`mailto:${personalInfo.email}`} className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline">{personalInfo.email || "[Email]"}</a>
+                <a 
+                  href={`mailto:${personalInfo.email}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-brand-primary transition-colors underline-offset-2 hover:underline"
+                >
+                  {personalInfo.email || "[Email]"}
+                </a>
                 <span>{personalInfo.phone || "[Phone]"}</span>
                 {personalInfo.linkedin && (
                   <a 
@@ -287,7 +294,19 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
               </h2>
               <div className="flex flex-wrap justify-center gap-4 text-sm font-serif italic text-slate-600">
                 <span>{personalInfo.jobTitle || "[Job Title]"}</span>
-                {personalInfo.email && <><span>•</span><a href={`mailto:${personalInfo.email}`} className="hover:text-slate-900 transition-colors uppercase tracking-widest text-[10px] font-bold not-italic font-sans">{personalInfo.email}</a></>}
+                {personalInfo.email && (
+                  <>
+                    <span>•</span>
+                    <a 
+                      href={`mailto:${personalInfo.email}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="hover:text-slate-900 transition-colors uppercase tracking-widest text-[10px] font-bold not-italic font-sans"
+                    >
+                      {personalInfo.email}
+                    </a>
+                  </>
+                )}
                 {personalInfo.phone && <><span>•</span><span>{personalInfo.phone}</span></>}
                 {personalInfo.linkedin && (
                   <>
@@ -341,7 +360,9 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                   {(education.length > 0 ? education : [{ id: 'empty', degree: '[Degree]', school: '[School]', startDate: 'Start Year', endDate: 'End Year' }]).map(edu => (
                     <div key={edu.id} className="text-center">
                       <h4 className="text-sm font-bold text-slate-900">{edu.degree}</h4>
-                      <p className="text-xs text-slate-500 italic">{edu.school}, {edu.startDate} — {edu.endDate}</p>
+                      <p className="text-xs text-slate-500 italic">
+                        {edu.school}{edu.startDate || edu.endDate ? ` | ${edu.startDate}${edu.startDate && edu.endDate ? ' — ' : ''}${edu.endDate}` : ''}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -374,7 +395,14 @@ const ResumePreview = React.forwardRef<HTMLDivElement, { data: ResumeData; templ
                 {personalInfo.jobTitle || "[Job Title]"}
               </p>
               <div className="mt-8 flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <a href={`mailto:${personalInfo.email}`} className="hover:text-brand-accent transition-colors">{personalInfo.email}</a>
+                <a 
+                  href={`mailto:${personalInfo.email}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-brand-accent transition-colors"
+                >
+                  {personalInfo.email}
+                </a>
                 <span>{personalInfo.phone}</span>
                 {personalInfo.linkedin && (
                   <a 
@@ -469,87 +497,30 @@ export default function App() {
   const [activeStep, setActiveStep] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<'tech-stack' | 'modern-sidebar' | 'classic-executive' | 'bold-impact'>('classic-executive');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [session, setSession] = useState<any>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<any[]>([]);
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const resumeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then((result) => {
       if (result.data) {
         setSession(result.data.session);
-        if (result.data.session) fetchDrafts(result.data.session.user.id);
       }
       setIsLoadingSession(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchDrafts(session.user.id);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchDrafts = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('resumes')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
-
-    if (!error && data) {
-      setDrafts(data);
-    }
-  };
-
-  const saveDraft = async () => {
-    if (!session?.user) return;
-    setSaveStatus('saving');
-    try {
-      const id = currentDraftId || (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11));
-      const { error } = await supabase
-        .from('resumes')
-        .upsert({ 
-          id: id,
-          user_id: session.user.id,
-          content: { ...resumeData, template: selectedTemplate },
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Supabase error saving:', error);
-        throw error;
-      }
-      
-      setCurrentDraftId(id);
-      setSaveStatus('success');
-      setLastSaved(new Date().toLocaleTimeString());
-      fetchDrafts(session.user.id);
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch (error: any) {
-      console.error('Catch error saving resume:', error);
-      setSaveStatus('error');
-      // Show error message for a longer period if it's an error
-      setTimeout(() => setSaveStatus('idle'), 5000);
-    }
-  };
-
-  const loadDraft = (draft: any) => {
-    setResumeData(draft.content);
-    setSelectedTemplate(draft.content.template || 'classic-executive');
-    setCurrentDraftId(draft.id);
-    setIsDraftsModalOpen(false);
-    setIsSettingsOpen(false);
-  };
+  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const handleExportPDF = async () => {
     if (!resumeRef.current) return;
@@ -557,22 +528,24 @@ export default function App() {
     setSaveStatus('saving');
     
     const element = resumeRef.current;
-    const fileName = `resume_${(resumeData.personalInfo.fullName || "professional").replace(/\s+/g, '_').toLowerCase()}.pdf`;
+    const fullName = resumeData.personalInfo.fullName || "professional";
+    const fileName = `resume_${fullName.replace(/\s+/g, '_').toLowerCase()}.pdf`;
 
     const opt = {
       margin: 0,
       filename: fileName,
-      image: { type: 'jpeg' as const, quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 1.0 },
       html2canvas: { 
         scale: 2, 
         useCORS: true, 
         logging: false,
-        windowWidth: 1200, // Kill mobile trigger
+        windowWidth: 1200, // Force desktop viewport to prevent layout stacking
         scrollX: 0,
         scrollY: 0,
         onclone: (clonedDoc: Document) => {
           const el = clonedDoc.getElementById('resume-preview-root');
           if (el) {
+            // Apply strict A4 desktop dimensions during capture
             el.style.width = '210mm';
             el.style.minHeight = '297mm';
             el.style.margin = '0';
@@ -581,6 +554,7 @@ export default function App() {
             el.style.transition = 'none';
             el.style.transform = 'none';
             el.style.overflow = 'hidden';
+            el.style.display = 'flex'; // Ensure layout engine respects structure
           }
         }
       },
@@ -589,6 +563,7 @@ export default function App() {
     };
 
     try {
+      // @ts-ignore
       await html2pdf().set(opt).from(element).save();
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -598,8 +573,6 @@ export default function App() {
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
-
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -740,27 +713,10 @@ export default function App() {
           <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 border rounded-full">
             <div className={`w-2 h-2 rounded-full ${saveStatus === 'saving' ? 'bg-amber-400 animate-pulse' : saveStatus === 'success' ? 'bg-green-500' : 'bg-slate-300'}`} />
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-              {saveStatus === 'saving' ? 'Saving...' : lastSaved ? `Saved ${lastSaved}` : 'Not Saved'}
+              {saveStatus === 'saving' ? 'Processing...' : 'System Ready'}
             </span>
           </div>
           
-          <button 
-            onClick={() => setIsDraftsModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-200 text-sm font-medium"
-          >
-            <FolderOpen size={18} />
-            My Drafts
-          </button>
-
-          <button 
-            onClick={saveDraft}
-            disabled={saveStatus === 'saving'}
-            className="flex items-center gap-2 px-4 py-2 border border-brand-primary text-brand-primary font-bold rounded-lg hover:bg-brand-primary hover:text-white transition-all active:scale-95 duration-150 text-sm"
-          >
-            <CloudUpload size={18} />
-            Save Draft
-          </button>
-
           <button 
             onClick={handleExportPDF}
             className="px-6 py-2 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary/95 shadow-lg shadow-brand-primary/20 transition-all active:scale-95 duration-150 text-sm flex items-center gap-2"
@@ -1132,62 +1088,6 @@ export default function App() {
                 />
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Drafts Modal */}
-      <AnimatePresence>
-        {isDraftsModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className={`w-full max-w-lg rounded-2xl shadow-2xl p-6 relative overflow-hidden ${isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white border'}`}
-            >
-              <button 
-                onClick={() => setIsDraftsModalOpen(false)}
-                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X size={20} />
-              </button>
-              <h2 className={`text-xl font-serif font-bold mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-brand-primary'}`}>
-                <FolderOpen className="text-brand-secondary" />
-                Select a Saved Draft
-              </h2>
-              
-              <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-                {drafts.length > 0 ? drafts.map((draft) => (
-                  <button
-                    key={draft.id}
-                    onClick={() => loadDraft(draft)}
-                    className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all group ${
-                      isDarkMode 
-                        ? 'border-slate-700 hover:bg-slate-700 text-white' 
-                        : 'border-slate-100 hover:border-brand-accent hover:bg-slate-50 text-brand-primary'
-                    }`}
-                  >
-                    <div className="flex flex-col items-start">
-                      <span className="font-bold text-sm">{draft.content?.personalInfo?.fullName || 'Untitled Resume'}</span>
-                      <span className="text-[10px] text-slate-400 font-medium">{new Date(draft.updated_at).toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-brand-secondary/10 text-brand-secondary rounded-full text-[10px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                      Load Draft
-                    </div>
-                  </button>
-                )) : (
-                  <div className="py-12 text-center">
-                    <p className="text-slate-400 text-sm font-medium italic">No saved drafts found.</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
