@@ -59,11 +59,16 @@ app.directive('lucideIcon', function($timeout) {
                 
                 // Clear existing content to prevent duplication
                 element.empty();
+                // Set the attribute that lucide looks for
                 element.attr('data-lucide', iconName);
                 
-                $timeout(() => {
-                    createIcons({ icons: icons });
-                });
+                // Use debounce-like approach for createIcons to avoid multiple calls per digest cycle
+                if (!(window as any).__lucideTimeout) {
+                    (window as any).__lucideTimeout = $timeout(() => {
+                        createIcons({ icons: icons });
+                        delete (window as any).__lucideTimeout;
+                    }, 50);
+                }
             };
 
             attrs.$observe('lucideIcon', updateIcon);
@@ -281,7 +286,7 @@ app.run(['AuthService', (AuthService: any) => {
     createIcons({ icons: icons });
 }]);
 
-// Manual bootstrap for Vite environment
-angular.element(document).ready(() => {
-    angular.bootstrap(document, ['resumeApp']);
-});
+// Manual bootstrap removed as ng-app is now in index.html
+// angular.element(document).ready(() => {
+//     angular.bootstrap(document, ['resumeApp']);
+// });
