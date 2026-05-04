@@ -46,7 +46,7 @@
                     {{ authCtrl.isSignUp ? 'Create your account' : 'Welcome back' }}
                 </h3>
                 <p class="text-slate-500 text-sm">
-                    {{ authCtrl.isSignUp ? 'Start building your professional future today.' : 'Sign in to access your saved resume drafts.' }}
+                    {{ authCtrl.isSignUp ? 'Start building your professional future today.' : 'Log in to access your saved resume drafts.' }}
                 </p>
             </div>
 
@@ -73,14 +73,14 @@
                 </div>
 
                 <button type="submit" ng-disabled="authCtrl.loading" class="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/30 active:scale-[0.98] flex items-center justify-center gap-3 text-sm relative overflow-hidden group">
-                    <span ng-if="!authCtrl.loading">{{ authCtrl.isSignUp ? 'Create Account' : 'Sign In' }}</span>
+                    <span ng-if="!authCtrl.loading">{{ authCtrl.isSignUp ? 'Create Account' : 'Log In' }}</span>
                     <div ng-if="authCtrl.loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 </button>
             </form>
 
             <div class="mt-8 text-center">
                 <button ng-click="authCtrl.isSignUp = !authCtrl.isSignUp" class="text-sm text-slate-600 font-medium hover:text-blue-600 transition-colors">
-                    {{ authCtrl.isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up Free" }}
+                    {{ authCtrl.isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up Free" }}
                 </button>
             </div>
         </div>
