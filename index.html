@@ -6,8 +6,11 @@
     <title>My Google AI Studio App</title>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="app-root" class="min-h-screen" ng-controller="ResumeController as ctrl">
+      <!-- Main Application Container -->
+      <div ng-include="'/src/templates/main.html'"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
 

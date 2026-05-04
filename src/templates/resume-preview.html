@@ -1,0 +1,234 @@
+<div id="resume-preview-root" 
+     class="bg-white shadow-2xl relative flex font-sans overflow-hidden transition-all duration-500"
+     ng-class="{
+         'flex-row': $ctrl.template === 'modern-sidebar',
+         'font-mono p-12 flex-col': $ctrl.template === 'tech-stack',
+         'p-16 flex-col': $ctrl.template === 'classic-executive',
+         'p-12 flex-col': $ctrl.template === 'bold-impact'
+     }"
+     style="width: 595px; min-height: 842px;">
+
+    <!-- Modern Sidebar Template -->
+    <div ng-if="$ctrl.template === 'modern-sidebar'" class="flex w-full">
+        <div class="w-[200px] bg-slate-50 p-8 flex flex-col gap-8 h-full border-r border-slate-100 flex-shrink-0">
+            <div class="space-y-1">
+                <h2 class="text-xl font-bold text-slate-900 leading-tight">
+                    {{ $ctrl.content.personalInfo.fullName || "[Your Name]" }}
+                </h2>
+                <p class="text-[10px] font-black text-blue-600 uppercase tracking-wider">
+                    {{ $ctrl.content.personalInfo.jobTitle || "[Job Title]" }}
+                </p>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="space-y-3">
+                    <h4 class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact</h4>
+                    <div class="space-y-2 text-[10px] text-slate-600 font-medium">
+                        <p class="break-all">
+                            <a href="mailto:{{$ctrl.content.personalInfo.email}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors underline-offset-2 hover:underline">
+                                {{ $ctrl.content.personalInfo.email || "[Email]" }}
+                            </a>
+                        </p>
+                        <p>{{ $ctrl.content.personalInfo.phone || "[Phone]" }}</p>
+                        <p ng-if="$ctrl.content.personalInfo.linkedin" class="break-all">
+                            <a href="{{$ctrl.content.personalInfo.linkedin.includes('http') ? $ctrl.content.personalInfo.linkedin : 'https://' + $ctrl.content.personalInfo.linkedin}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 underline">
+                                LinkedIn
+                            </a>
+                        </p>
+                        <p>{{ $ctrl.content.personalInfo.location || "[Location]" }}</p>
+                    </div>
+                </div>
+
+                <div ng-if="$ctrl.content.skills.length > 0" class="space-y-3">
+                    <h4 class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Expertise</h4>
+                    <div class="space-y-4">
+                        <div ng-repeat="group in $ctrl.content.skills">
+                            <p class="text-[10px] font-black text-slate-900 uppercase mb-1">{{ group.category || "[Category]" }}</p>
+                            <p class="text-[10px] text-slate-700 leading-tight">{{ group.items || "[Skills]" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex-1 p-10 flex flex-col h-full overflow-hidden">
+            <div class="space-y-8">
+                <section>
+                    <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Profile</h3>
+                    <p class="text-[11px] text-slate-600 leading-relaxed italic">
+                        {{ $ctrl.content.summary || "[Professional profile summary goes here...]" }}
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Experience</h3>
+                    <div class="space-y-6">
+                        <div ng-repeat="exp in $ctrl.content.experiences">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <h4 class="text-[11px] font-bold text-slate-900">{{exp.jobTitle}}</h4>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase">{{exp.startDate}} — {{exp.endDate}}</span>
+                            </div>
+                            <p class="text-[10px] text-blue-600 font-bold mb-2">{{exp.employer}}</p>
+                            <p class="text-[10px] text-slate-500 leading-relaxed px-4 border-l border-slate-100">{{exp.description}}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Education</h3>
+                    <div class="space-y-4">
+                        <div ng-repeat="edu in $ctrl.content.education" class="flex justify-between items-baseline">
+                            <div>
+                                <h4 class="text-[11px] font-bold text-slate-900">{{edu.degree}}</h4>
+                                <p class="text-[10px] text-slate-500 font-medium">{{edu.school}}</p>
+                            </div>
+                            <span class="text-[9px] text-slate-400 font-bold">{{edu.startDate}} — {{edu.endDate}}</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Stack Template -->
+    <div ng-if="$ctrl.template === 'tech-stack'" class="w-full">
+        <header class="mb-10">
+            <h2 class="text-4xl font-black text-blue-600 mb-2">
+                {{ $ctrl.content.personalInfo.fullName || "[Your Name]" }}
+            </h2>
+            <div class="flex flex-wrap gap-4 text-[11px] text-slate-500 uppercase font-black tracking-widest border-t-2 border-blue-600 pt-3">
+                <span>{{ $ctrl.content.personalInfo.jobTitle || "[Job Title]" }}</span>
+                <a href="mailto:{{$ctrl.content.personalInfo.email}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 underline">{{ $ctrl.content.personalInfo.email }}</a>
+                <span>{{ $ctrl.content.personalInfo.phone }}</span>
+            </div>
+        </header>
+
+        <div class="space-y-10">
+            <section>
+                <h3 class="text-xs font-black bg-blue-600 text-white w-fit px-2 py-1 mb-4 uppercase tracking-widest">About</h3>
+                <p class="text-[12px] text-slate-600 leading-relaxed font-medium">
+                    {{ $ctrl.content.summary }}
+                </p>
+            </section>
+
+            <section>
+                <h3 class="text-xs font-black bg-blue-600 text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Stack</h3>
+                <div class="flex flex-wrap gap-2">
+                    <div ng-repeat="group in $ctrl.content.skills">
+                        <span ng-repeat="skill in group.items.split(',')" ng-if="skill.trim()" class="px-3 py-1 bg-slate-900 text-white rounded text-[10px] font-bold uppercase tracking-tight mr-2 mb-2 inline-block">
+                            {{ skill.trim() }}
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-8">
+                <h3 class="text-xs font-black bg-blue-600 text-white w-fit px-2 py-1 mb-2 uppercase tracking-widest">Logs</h3>
+                <div ng-repeat="exp in $ctrl.content.experiences" class="border-l-4 border-slate-900 pl-6 py-1">
+                    <h4 class="text-sm font-black text-slate-900">{{exp.jobTitle}} <span class="text-blue-500">@</span> {{exp.employer}}</h4>
+                    <p class="text-[10px] text-slate-400 mb-3 font-bold">{{exp.startDate}} - {{exp.endDate}}</p>
+                    <p class="text-[12px] text-slate-600 leading-relaxed">{{exp.description}}</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Classic Executive Template -->
+    <div ng-if="$ctrl.template === 'classic-executive'" class="w-full">
+        <header class="text-center mb-12 border-b-2 border-slate-900 pb-8">
+            <h2 class="text-5xl font-serif font-bold text-slate-900 mb-4">
+                {{ $ctrl.content.personalInfo.fullName || "[Your Name]" }}
+            </h2>
+            <div class="flex flex-wrap justify-center gap-4 text-sm font-serif italic text-slate-600">
+                <span>{{ $ctrl.content.personalInfo.jobTitle || "[Job Title]" }}</span>
+                <span ng-if="$ctrl.content.personalInfo.email">•</span>
+                <a ng-if="$ctrl.content.personalInfo.email" href="mailto:{{$ctrl.content.personalInfo.email}}" target="_blank" rel="noopener noreferrer" class="hover:text-slate-900 uppercase tracking-widest text-[10px] font-bold not-italic font-sans">{{$ctrl.content.personalInfo.email}}</a>
+                <span ng-if="$ctrl.content.personalInfo.phone">•</span>
+                <span>{{$ctrl.content.personalInfo.phone}}</span>
+                <span ng-if="$ctrl.content.personalInfo.location">•</span>
+                <span>{{$ctrl.content.personalInfo.location}}</span>
+            </div>
+        </header>
+        
+        <div class="space-y-10 font-serif">
+            <section ng-if="$ctrl.content.summary">
+                <h3 class="text-center text-sm font-bold text-slate-900 mb-4 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Professional Profile</h3>
+                <p class="text-sm text-slate-700 leading-relaxed text-center italic px-10">
+                    {{ $ctrl.content.summary }}
+                </p>
+            </section>
+
+            <section>
+                <h3 class="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Professional Experience</h3>
+                <div class="space-y-10">
+                    <div ng-repeat="exp in $ctrl.content.experiences">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <h4 class="text-base font-bold text-slate-900">{{exp.jobTitle}}</h4>
+                            <span class="text-[11px] font-bold text-slate-600">{{exp.startDate}} — {{exp.endDate}}</span>
+                        </div>
+                        <p class="text-xs font-bold italic text-slate-500 mb-4">{{exp.employer}}, {{exp.city}}</p>
+                        <p class="text-[13px] text-slate-700 leading-relaxed text-justify">{{exp.description}}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Education</h3>
+                <div class="space-y-4">
+                    <div ng-repeat="edu in $ctrl.content.education" class="text-center">
+                        <h4 class="text-sm font-bold text-slate-900">{{edu.degree}}</h4>
+                        <p class="text-xs text-slate-500 italic">
+                            {{edu.school}} | {{edu.startDate}} — {{edu.endDate}}
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Bold Impact Template -->
+    <div ng-if="$ctrl.template === 'bold-impact'" class="w-full">
+        <header class="mb-12 bg-slate-900 text-white p-12 shadow-inner w-full">
+            <h2 class="text-5xl font-black mb-3 leading-none">
+                {{ $ctrl.content.personalInfo.fullName || "[Your Name]" }}
+            </h2>
+            <p class="text-lg font-black text-blue-400 uppercase tracking-[0.3em]">
+                {{ $ctrl.content.personalInfo.jobTitle || "[Job Title]" }}
+            </p>
+            <div class="mt-8 flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <a href="mailto:{{$ctrl.content.personalInfo.email}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400">{{ $ctrl.content.personalInfo.email }}</a>
+                <span>{{ $ctrl.content.personalInfo.phone }}</span>
+                <span>{{ $ctrl.content.personalInfo.location }}</span>
+            </div>
+        </header>
+
+        <div class="space-y-16 p-12">
+            <section class="relative pl-12">
+                <div class="absolute left-0 top-0 w-2 h-full bg-blue-500 opacity-10 rounded-full"></div>
+                <h3 class="text-xl font-black text-slate-900 mb-6 flex items-center gap-4">
+                    01 <span class="w-12 h-[2px] bg-blue-500"></span> Profile
+                </h3>
+                <p class="text-base text-slate-600 leading-relaxed font-bold opacity-80 italic">
+                    "{{ $ctrl.content.summary }}"
+                </p>
+            </section>
+
+            <section class="relative pl-12">
+                <div class="absolute left-0 top-0 w-2 h-full bg-blue-500 opacity-20 rounded-full"></div>
+                <h3 class="text-xl font-black text-slate-900 mb-10 flex items-center gap-4">
+                    02 <span class="w-12 h-[2px] bg-blue-500"></span> Experience
+                </h3>
+                <div class="space-y-12">
+                    <div ng-repeat="exp in $ctrl.content.experiences" class="relative group">
+                        <div class="absolute -left-12 top-2 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-black text-[10px]">
+                            ✓
+                        </div>
+                        <h4 class="text-lg font-black text-slate-900 mb-1">{{exp.jobTitle}}</h4>
+                        <p class="text-xs font-black text-blue-500 mb-4 uppercase tracking-widest">{{exp.employer}} | {{exp.startDate}} - {{exp.endDate}}</p>
+                        <p class="text-sm text-slate-600 leading-relaxed font-medium opacity-90 border-l-2 border-slate-100 pl-6">{{exp.description}}</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,88 @@
+<div class="min-h-screen bg-white flex flex-col lg:flex-row overflow-hidden font-sans" ng-controller="AuthController as authCtrl">
+    <!-- Left Side: Branding and Features -->
+    <div class="lg:w-1/2 bg-slate-900 p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-600 opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        
+        <div class="relative z-10">
+            <div class="flex items-center gap-2 mb-12 animate-in fade-in slide-in-from-left-4 duration-500">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                    <span class="font-black text-xl">R</span>
+                </div>
+                <span class="text-2xl font-black text-white tracking-tight font-serif">Resume Maker</span>
+            </div>
+
+            <div class="max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <h2 class="text-4xl lg:text-5xl font-black text-white leading-tight mb-6">
+                    Create a resume that <span class="text-blue-500">gets you hired.</span>
+                </h2>
+                <p class="text-slate-400 text-lg mb-12 leading-relaxed">
+                    Professional, designer-approved templates engineered to highlight your strengths and secure your dream role.
+                </p>
+
+                <div class="space-y-8">
+                    <div ng-repeat="feature in authCtrl.features" class="flex gap-4 animate-in fade-in slide-in-from-left-4 duration-500" style="animation-delay: {{ $index * 100 }}ms">
+                        <div class="mt-1 w-10 h-10 shrink-0 bg-slate-800 rounded-lg flex items-center justify-center text-blue-500 border border-slate-700">
+                            <i lucide-icon="{{feature.icon}}"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold text-sm mb-1">{{feature.title}}</h4>
+                            <p class="text-slate-500 text-xs leading-relaxed">{{feature.description}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative z-10 pt-12 border-t border-slate-800 mt-12 flex items-center justify-between text-slate-500 text-xs font-medium">
+            <p>© 2024 Resume Maker. All rights reserved.</p>
+        </div>
+    </div>
+
+    <!-- Right Side: Auth Form -->
+    <div class="lg:w-1/2 bg-slate-50 flex items-center justify-center p-6 lg:p-12">
+        <div class="bg-white p-8 lg:p-12 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100 animate-in zoom-in-95 duration-500">
+            <div class="mb-10">
+                <h3 class="text-2xl font-black text-slate-900 mb-2">
+                    {{ authCtrl.isSignUp ? 'Create your account' : 'Welcome back' }}
+                </h3>
+                <p class="text-slate-500 text-sm">
+                    {{ authCtrl.isSignUp ? 'Start building your professional future today.' : 'Sign in to access your saved resume drafts.' }}
+                </p>
+            </div>
+
+            <form ng-submit="authCtrl.handleAuth()" class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Email Address</label>
+                    <div class="relative">
+                        <i lucide-icon="mail" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="email" required ng-model="authCtrl.email" class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none transition-all text-sm font-medium" placeholder="name@company.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Password</label>
+                    <div class="relative">
+                        <i lucide-icon="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="password" required ng-model="authCtrl.password" class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none transition-all text-sm font-medium" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div ng-if="authCtrl.error" class="flex gap-3 text-red-500 text-xs bg-red-50 p-4 rounded-xl border border-red-100 italic">
+                    <i lucide-icon="alert-circle" class="shrink-0"></i>
+                    <p class="font-medium">{{ authCtrl.error }}</p>
+                </div>
+
+                <button type="submit" ng-disabled="authCtrl.loading" class="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/30 active:scale-[0.98] flex items-center justify-center gap-3 text-sm relative overflow-hidden group">
+                    <span ng-if="!authCtrl.loading">{{ authCtrl.isSignUp ? 'Create Account' : 'Sign In' }}</span>
+                    <div ng-if="authCtrl.loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </form>
+
+            <div class="mt-8 text-center">
+                <button ng-click="authCtrl.isSignUp = !authCtrl.isSignUp" class="text-sm text-slate-600 font-medium hover:text-blue-600 transition-colors">
+                    {{ authCtrl.isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up Free" }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

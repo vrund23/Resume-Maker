@@ -1,0 +1,128 @@
+<!-- Auth Page -->
+<div ng-if="!ctrl.auth.session && !ctrl.auth.loading" class="min-h-screen">
+    <div ng-include="'/src/templates/auth.html'"></div>
+</div>
+
+<!-- Loading State -->
+<div ng-if="ctrl.auth.loading" class="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+</div>
+
+<!-- App Layout -->
+<div ng-if="ctrl.auth.session" class="flex flex-col min-h-screen transition-colors duration-300" 
+     ng-class="{'dark bg-slate-900 text-white': ctrl.isDarkMode, 'bg-slate-50': !ctrl.isDarkMode}">
+    
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 border-b transition-colors"
+            ng-class="ctrl.isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'">
+        <div class="flex items-center gap-2">
+            <span class="text-xl font-black tracking-tight font-serif" 
+                  ng-class="ctrl.isDarkMode ? 'text-white' : 'text-blue-950'">Resume Maker</span>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 px-3 py-1 bg-slate-50 border rounded-full">
+                <div class="w-2 h-2 rounded-full" 
+                     ng-class="{'bg-amber-400 animate-pulse': ctrl.saveStatus === 'saving', 'bg-green-500': ctrl.saveStatus === 'success', 'bg-slate-300': ctrl.saveStatus === 'idle'}"></div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                    {{ ctrl.saveStatus === 'saving' ? 'Processing...' : 'System Ready' }}
+                </span>
+            </div>
+
+            <button ng-click="ctrl.handleExportPDF()"
+                    class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all active:scale-95 text-sm flex items-center gap-2">
+                <i lucide-icon="arrow-down-to-line"></i>
+                Export PDF
+            </button>
+
+            <div class="flex gap-2 ml-4 border-l pl-4 border-slate-200 relative">
+                <button ng-click="ctrl.isSettingsOpen = !ctrl.isSettingsOpen"
+                        class="p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors">
+                    <i lucide-icon="settings"></i>
+                </button>
+                
+                <div ng-show="ctrl.isSettingsOpen" class="absolute right-0 top-full mt-2 w-48 rounded-xl shadow-2xl border p-2 z-[60]"
+                     ng-class="ctrl.isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'">
+                    <button ng-click="ctrl.toggleTheme()"
+                            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors"
+                            ng-class="ctrl.isDarkMode ? 'hover:bg-slate-700 text-white' : 'hover:bg-slate-100 text-slate-700'">
+                        <i lucide-icon="{{ctrl.isDarkMode ? 'sun' : 'moon'}}"></i>
+                        {{ ctrl.isDarkMode ? 'Light Mode' : 'Dark Mode' }}
+                    </button>
+                    <button ng-click="ctrl.auth.signOut()"
+                            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-red-500"
+                            ng-class="ctrl.isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'">
+                        <i lucide-icon="log-out"></i>
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 pt-16 h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 border-r flex flex-col font-serif transition-colors"
+               ng-class="ctrl.isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'">
+            <div class="px-6 py-8">
+                <div class="flex flex-col mb-3">
+                    <h3 class="font-bold leading-tight text-sm" ng-class="ctrl.isDarkMode ? 'text-white' : 'text-blue-900'">Resume Draft</h3>
+                    <p class="text-[10px] uppercase tracking-wider font-sans font-bold text-blue-600">
+                        {{ (ctrl.activeStep / 5) * 100 }}%
+                    </p>
+                </div>
+                <div class="w-full h-1 rounded-full overflow-hidden" ng-class="ctrl.isDarkMode ? 'bg-slate-800' : 'bg-slate-200'">
+                    <div class="bg-blue-600 h-full transition-all duration-300" ng-style="{'width': (ctrl.activeStep / 5) * 100 + '%'}"></div>
+                </div>
+            </div>
+
+            <nav class="flex-1 space-y-1 px-2 font-sans overflow-y-auto">
+                <button ng-repeat="step in ctrl.steps"
+                        ng-click="ctrl.activeStep = step.step"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all text-sm font-medium"
+                        ng-class="ctrl.activeStep === step.step ? (ctrl.isDarkMode ? 'bg-slate-800 text-white border-l-4 border-blue-400 font-bold' : 'bg-slate-50 text-blue-900 border-l-4 border-blue-600 font-bold shadow-sm') : 'text-slate-500 hover:bg-slate-50'">
+                    <i lucide-icon="{{step.icon}}"></i>
+                    {{ step.label }}
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Editor Content -->
+        <main class="flex-1 ml-64 p-8 overflow-y-auto custom-scrollbar">
+            <div class="w-full flex flex-col lg:flex-row gap-8 min-h-full">
+                <!-- Form Sections (50%) -->
+                <div class="flex-1 space-y-8">
+                    <div ng-include="'/src/templates/editor-steps.html'"></div>
+                </div>
+
+                <!-- Live Preview Sticky (50%) -->
+                <div class="flex-1 relative">
+                    <div class="sticky top-0 h-[calc(100vh-128px)] flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Live Preview</h3>
+                            <div class="flex gap-2">
+                                <button ng-click="ctrl.isTemplateGalleryOpen = true" class="p-2 bg-white border rounded-lg hover:bg-slate-50 shadow-sm transition-all">
+                                    <i lucide-icon="paintbrush" class="text-blue-600"></i>
+                                </button>
+                                <button ng-click="ctrl.toggleFullscreen()" class="p-2 bg-white border rounded-lg hover:bg-slate-50 shadow-sm transition-all">
+                                    <i lucide-icon="maximize-2" class="text-blue-600"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Mini Preview Container -->
+                        <div class="flex-1 bg-slate-200 rounded-xl p-8 shadow-inner overflow-auto flex justify-center custom-scrollbar">
+                            <div class="origin-top scale-[0.75] shadow-2xl" id="resume-preview-container">
+                                <resume-preview content="ctrl.resumeData" template="ctrl.selectedTemplate"></resume-preview>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal Placeholders -->
+<div ng-if="ctrl.isTemplateGalleryOpen" ng-include="'/src/templates/gallery.html'"></div>
+<div ng-if="ctrl.isFullScreenPreview" ng-include="'/src/templates/fullscreen.html'"></div>
