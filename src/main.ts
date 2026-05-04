@@ -49,6 +49,10 @@ const INITIAL_DATA = {
 
 const app = angular.module('resumeApp', []);
 
+app.config(['$locationProvider', function($locationProvider) {
+    $locationProvider.html5Mode(true);
+}]);
+
 // Lucide icon replacement directive
 app.directive('lucideIcon', function($timeout) {
     return {
