@@ -54,14 +54,19 @@ app.directive('lucideIcon', function($timeout) {
     return {
         restrict: 'A',
         link: function(scope: any, element: any, attrs: any) {
-            attrs.$observe('lucideIcon', function(val: string) {
-                if (val) {
-                    element.attr('data-lucide', val);
-                    $timeout(() => {
-                        createIcons({ icons: icons });
-                    });
-                }
-            });
+            const updateIcon = (iconName: string) => {
+                if (!iconName) return;
+                
+                // Clear existing content to prevent duplication
+                element.empty();
+                element.attr('data-lucide', iconName);
+                
+                $timeout(() => {
+                    createIcons({ icons: icons });
+                });
+            };
+
+            attrs.$observe('lucideIcon', updateIcon);
         }
     };
 });
@@ -73,12 +78,18 @@ app.service('AuthService', ['$rootScope', '$timeout', function($rootScope, $time
   service.loading = true;
 
   service.getSession = async () => {
-    const { data } = await supabase.auth.getSession();
-    $timeout(() => {
-        service.session = data.session;
-        service.loading = false;
-    });
-    return data.session;
+    service.loading = true;
+    try {
+        const { data } = await supabase.auth.getSession();
+        $timeout(() => {
+            service.session = data.session;
+            service.loading = false;
+        });
+        return data.session;
+    } catch (err) {
+        $timeout(() => { service.loading = false; });
+        return null;
+    }
   };
 
   service.signOut = async () => {
@@ -228,6 +239,7 @@ app.controller('ResumeController', ['AuthService', '$scope', '$timeout', functio
                         el.style.boxShadow = 'none';
                         el.style.borderRadius = '0';
                         el.style.display = 'flex';
+                        el.style.flexDirection = el.getAttribute('ng-class')?.includes('modern-sidebar') ? 'row' : 'column';
                     }
                 }
             },

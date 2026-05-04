@@ -32,7 +32,7 @@
                         <p>{{ $ctrl.content.personalInfo.phone || "[Phone]" }}</p>
                         <p ng-if="$ctrl.content.personalInfo.linkedin" class="break-all">
                             <a href="{{$ctrl.content.personalInfo.linkedin.includes('http') ? $ctrl.content.personalInfo.linkedin : 'https://' + $ctrl.content.personalInfo.linkedin}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 underline">
-                                LinkedIn
+                                {{ $ctrl.content.personalInfo.linkedin }}
                             </a>
                         </p>
                         <p>{{ $ctrl.content.personalInfo.location || "[Location]" }}</p>
@@ -74,13 +74,13 @@
                     </div>
                 </section>
 
-                <section>
+                <section ng-if="$ctrl.content.education.length > 0">
                     <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Education</h3>
                     <div class="space-y-4">
                         <div ng-repeat="edu in $ctrl.content.education" class="flex justify-between items-baseline">
                             <div>
                                 <h4 class="text-[11px] font-bold text-slate-900">{{edu.degree}}</h4>
-                                <p class="text-[10px] text-slate-500 font-medium">{{edu.school}}</p>
+                                <p class="text-[10px] text-slate-500 font-medium">{{edu.school}}, {{edu.city}}</p>
                             </div>
                             <span class="text-[9px] text-slate-400 font-bold">{{edu.startDate}} — {{edu.endDate}}</span>
                         </div>
@@ -100,6 +100,7 @@
                 <span>{{ $ctrl.content.personalInfo.jobTitle || "[Job Title]" }}</span>
                 <a href="mailto:{{$ctrl.content.personalInfo.email}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 underline">{{ $ctrl.content.personalInfo.email }}</a>
                 <span>{{ $ctrl.content.personalInfo.phone }}</span>
+                <a ng-if="$ctrl.content.personalInfo.linkedin" href="{{$ctrl.content.personalInfo.linkedin.includes('http') ? $ctrl.content.personalInfo.linkedin : 'https://' + $ctrl.content.personalInfo.linkedin}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 underline">{{ $ctrl.content.personalInfo.linkedin }}</a>
             </div>
         </header>
 
@@ -122,12 +123,22 @@
                 </div>
             </section>
 
-            <section class="space-y-8">
-                <h3 class="text-xs font-black bg-blue-600 text-white w-fit px-2 py-1 mb-2 uppercase tracking-widest">Logs</h3>
-                <div ng-repeat="exp in $ctrl.content.experiences" class="border-l-4 border-slate-900 pl-6 py-1">
-                    <h4 class="text-sm font-black text-slate-900">{{exp.jobTitle}} <span class="text-blue-500">@</span> {{exp.employer}}</h4>
-                    <p class="text-[10px] text-slate-400 mb-3 font-bold">{{exp.startDate}} - {{exp.endDate}}</p>
-                    <p class="text-[12px] text-slate-600 leading-relaxed">{{exp.description}}</p>
+            <section ng-if="$ctrl.content.experiences.length > 0">
+                <h3 class="text-xs font-black bg-blue-600 text-white w-fit px-2 py-1 mb-6 uppercase tracking-widest">Experience</h3>
+                <div class="space-y-8">
+                    <div ng-repeat="exp in $ctrl.content.experiences" class="border-l-4 border-slate-900 pl-6 py-1">
+                        <h4 class="text-sm font-black text-slate-900">{{exp.jobTitle}} <span class="text-blue-500">@</span> {{exp.employer}}</h4>
+                        <p class="text-[10px] text-slate-400 mb-3 font-bold">{{exp.startDate}} - {{exp.endDate}}</p>
+                        <p class="text-[12px] text-slate-600 leading-relaxed">{{exp.description}}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-8" ng-if="$ctrl.content.education.length > 0">
+                <h3 class="text-xs font-black bg-blue-600 text-white w-fit px-2 py-1 mb-2 uppercase tracking-widest">Education</h3>
+                <div ng-repeat="edu in $ctrl.content.education" class="border-l-4 border-slate-900 pl-6 py-1">
+                    <h4 class="text-sm font-black text-slate-900">{{edu.degree}} <span class="text-blue-500">@</span> {{edu.school}}</h4>
+                    <p class="text-[10px] text-slate-400 mb-1 font-bold">{{edu.city}} | {{edu.startDate}} - {{edu.endDate}}</p>
                 </div>
             </section>
         </div>
@@ -145,6 +156,8 @@
                 <a ng-if="$ctrl.content.personalInfo.email" href="mailto:{{$ctrl.content.personalInfo.email}}" target="_blank" rel="noopener noreferrer" class="hover:text-slate-900 uppercase tracking-widest text-[10px] font-bold not-italic font-sans">{{$ctrl.content.personalInfo.email}}</a>
                 <span ng-if="$ctrl.content.personalInfo.phone">•</span>
                 <span>{{$ctrl.content.personalInfo.phone}}</span>
+                <span ng-if="$ctrl.content.personalInfo.linkedin">•</span>
+                <a ng-if="$ctrl.content.personalInfo.linkedin" href="{{$ctrl.content.personalInfo.linkedin.includes('http') ? $ctrl.content.personalInfo.linkedin : 'https://' + $ctrl.content.personalInfo.linkedin}}" target="_blank" rel="noopener noreferrer" class="hover:text-slate-900 uppercase tracking-widest text-[10px] font-bold not-italic font-sans">{{$ctrl.content.personalInfo.linkedin}}</a>
                 <span ng-if="$ctrl.content.personalInfo.location">•</span>
                 <span>{{$ctrl.content.personalInfo.location}}</span>
             </div>
@@ -172,14 +185,24 @@
                 </div>
             </section>
 
-            <section>
+            <section ng-if="$ctrl.content.education.length > 0">
                 <h3 class="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Education</h3>
                 <div class="space-y-4">
                     <div ng-repeat="edu in $ctrl.content.education" class="text-center">
                         <h4 class="text-sm font-bold text-slate-900">{{edu.degree}}</h4>
                         <p class="text-xs text-slate-500 italic">
-                            {{edu.school}} | {{edu.startDate}} — {{edu.endDate}}
+                            {{edu.school}}, {{edu.city}} | {{edu.startDate}} — {{edu.endDate}}
                         </p>
+                    </div>
+                </div>
+            </section>
+
+            <section ng-if="$ctrl.content.skills.length > 0">
+                <h3 class="text-center text-sm font-bold text-slate-900 mb-6 uppercase tracking-[0.25em] border-b border-slate-100 pb-1">Skills & Expertise</h3>
+                <div class="flex flex-wrap justify-center gap-x-8 gap-y-4 px-10">
+                    <div ng-repeat="group in $ctrl.content.skills" class="text-center">
+                        <h4 class="text-[11px] font-bold text-slate-900 uppercase tracking-widest mb-1">{{group.category}}</h4>
+                        <p class="text-[12px] text-slate-600 italic">{{group.items}}</p>
                     </div>
                 </div>
             </section>
@@ -198,6 +221,7 @@
             <div class="mt-8 flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
                 <a href="mailto:{{$ctrl.content.personalInfo.email}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400">{{ $ctrl.content.personalInfo.email }}</a>
                 <span>{{ $ctrl.content.personalInfo.phone }}</span>
+                <a ng-if="$ctrl.content.personalInfo.linkedin" href="{{$ctrl.content.personalInfo.linkedin.includes('http') ? $ctrl.content.personalInfo.linkedin : 'https://' + $ctrl.content.personalInfo.linkedin}}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400">{{ $ctrl.content.personalInfo.linkedin }}</a>
                 <span>{{ $ctrl.content.personalInfo.location }}</span>
             </div>
         </header>
@@ -226,6 +250,35 @@
                         <h4 class="text-lg font-black text-slate-900 mb-1">{{exp.jobTitle}}</h4>
                         <p class="text-xs font-black text-blue-500 mb-4 uppercase tracking-widest">{{exp.employer}} | {{exp.startDate}} - {{exp.endDate}}</p>
                         <p class="text-sm text-slate-600 leading-relaxed font-medium opacity-90 border-l-2 border-slate-100 pl-6">{{exp.description}}</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="relative pl-12" ng-if="$ctrl.content.education.length > 0">
+                <div class="absolute left-0 top-0 w-2 h-full bg-blue-500 opacity-20 rounded-full"></div>
+                <h3 class="text-xl font-black text-slate-900 mb-10 flex items-center gap-4">
+                    03 <span class="w-12 h-[2px] bg-blue-500"></span> Education
+                </h3>
+                <div class="space-y-12">
+                    <div ng-repeat="edu in $ctrl.content.education" class="relative group">
+                        <div class="absolute -left-12 top-2 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-black text-[10px]">
+                            ✓
+                        </div>
+                        <h4 class="text-lg font-black text-slate-900 mb-1">{{edu.degree}}</h4>
+                        <p class="text-xs font-black text-blue-500 mb-4 uppercase tracking-widest">{{edu.school}}, {{edu.city}} | {{edu.startDate}} - {{edu.endDate}}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="relative pl-12" ng-if="$ctrl.content.skills.length > 0">
+                <div class="absolute left-0 top-0 w-2 h-full bg-blue-500 opacity-20 rounded-full"></div>
+                <h3 class="text-xl font-black text-slate-900 mb-10 flex items-center gap-4">
+                    04 <span class="w-12 h-[2px] bg-blue-500"></span> Skills
+                </h3>
+                <div class="grid grid-cols-2 gap-8">
+                    <div ng-repeat="group in $ctrl.content.skills" class="relative group">
+                        <h4 class="text-sm font-black text-slate-900 mb-2 uppercase tracking-widest border-l-4 border-blue-500 pl-4">{{group.category}}</h4>
+                        <p class="text-xs font-bold text-slate-500 leading-relaxed pl-5">{{group.items}}</p>
                     </div>
                 </div>
             </section>
